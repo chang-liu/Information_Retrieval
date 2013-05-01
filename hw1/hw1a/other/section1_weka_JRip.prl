@@ -1,0 +1,113 @@
+#!/usr/local/bin/perl
+
+##########################################################
+##  END-OF-SENTENCE CLASSIFIER
+##  Chang Liu, chang.liu@jhu.edu
+##    section1.prl < sent.data.train | more
+##
+##  Suggestion: run in a wide window
+##########################################################
+
+
+$L="classes";
+
+&initialize_set(*abbrevs,"$L/abbrevs"); 
+&initialize_set(*titles,"$L/titles"); 
+&initialize_set(*unlikely_proper_nouns,"$L/unlikely_proper_nouns"); 
+&initialize_set(*timeterms,"$L/timeterms"); 
+&initialize_set(*thethatthen,"$L/thethatthen"); 
+
+open(OUTFILE, ">invalid_rule_weka.txt");
+
+
+while (<>) {
+   @words = split(' ',$_);
+   ($class,$id,$L3,$L2,$L1,$C,$R1,$R2,$R3,$Llength,$Rlength,$Nspaces) = @words;
+ 
+  # rule 1 from weka
+  if ((&classmember($L1,abbrevs) || $L1 =~ /^([A-Z]\.[A-Z])+$/) && (&classmember($L1,titles)) && (&classmember($R1,thethatthen))) { 
+    &ret(1,$class,$id,'NEOS');
+  } 
+  # rule 2 from weka
+  elsif ((&classmember($L1,abbrevs) || $L1 =~ /^([A-Z]\.[A-Z])+$/) && !($R1 =~ /^[A-Z]/)) { 
+    &ret(2,$class,$id,'NEOS');
+  }
+  # rule 3 from weka
+  elsif (($L1 =~ /^[A-Z]$/) && !(&classmember($R1,thethatthen)) && ($R1 eq "<P>")) { 
+    &ret(3,$class,$id,'NEOS');
+  }
+  # rule 4 from weka
+  elsif ($L1 =~ /[a-zA-Z]([\.][a-zA-Z])+/) { 
+    &ret(4,$class,$id,'NEOS');
+  }
+  # rule 5 from weka
+  elsif ($R1 =~ /^[a-z]/) { 
+    &ret(5,$class,$id,'NEOS');
+  } 
+  # rule 6 from weka
+  elsif ((&classmember($L1,sentence_internal)) && !($L1 =~ /^[A-Z]$/)) { 
+    &ret(6,$class,$id,'NEOS');
+  } 
+  else                     { 
+    &ret(0,$class,$id,'EOS');  # Default rule from weka 
+  }
+}
+
+close(OUTFILE);
+
+print "Your score is: ", $correct/($correct+$incorrect), "\n";
+ 
+##########################################################
+## RET - prints full line for errors and keeps score
+##     - $where indicates the rule number responsible for the classification
+##
+##  This is a useful debugging tool, as after each change in
+##  the program one can identify the remaining misclassified
+##  training examples and the patterns responsible for them. 
+##########################################################
+ 
+sub ret {
+   local($where,$trueclass,$id,$givenclass) = @_;
+   my @output = (0) x 21;
+   
+   if ($trueclass eq $givenclass) {
+      # print ".. (at ",$where,") -  ", $_;
+      $correct++; 
+   }
+   else {
+      # print "XX (at ",$where,") -  ", $_;
+      print OUTFILE ("XX (at ",$where," wrong label ", $givenclass , ") -  ", $_);
+      $incorrect++;
+   }
+   next;
+}
+
+##########################################################
+## CLASSMEMBER - tests for membership of $key in a given set
+##
+##  The \L in $set{"\L$key"} is a perl hack to convert a
+##  string into all lower case for lookup in a word array
+##  insensitive to the capitalization of the original key.
+##########################################################
+
+sub classmember{
+   local($key,*set) = @_;
+
+   return $set{"\L$key"};
+}
+
+##########################################################
+## INITIALIZE_SET - loads named associative array with set members   
+##########################################################
+
+sub initialize_set{
+   local(*set,$where) = @_;
+   
+    open (FILE,$where) || die "Can't open file $where: $!\n";
+
+    while (<FILE>) {
+        chop;
+        $set{$_} = 1;
+    }
+    close (FILE);
+}

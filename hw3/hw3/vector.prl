@@ -1,0 +1,2526 @@
+#!/usr/local/bin/perl -w
+
+use strict;
+
+use Carp;
+use FileHandle;
+use List::MoreUtils qw(firstidx);
+
+##########################################################
+##  VECTOR
+##
+##  Usage:   vector     (no command line arguments)
+##
+##  Main program for the hw3 :)
+##
+##  Chang Liu
+##  chang.liu@jhu.edu
+##########################################################
+
+
+
+############################################################
+## Program Defaults and Global Variables
+############################################################
+
+my $DIR  = "../hw3";
+my $HOME = ".";
+
+my $tank_token_docs = "$DIR/tank";           # tokenized tank documents
+my $tank_corps_freq = "$DIR/tank";           # frequency of each token in the tank documents.
+my $tank_titles     = "$DIR/tank.titles";   # titles of each article in tank
+my $plant_token_docs = "$DIR/plant";           # tokenized plant documents
+my $plant_corps_freq = "$DIR/plant";           # frequency of each token in the plant documents.
+my $plant_titles     = "$DIR/plant.titles";   # titles of each article in plant
+my $perplace_token_docs = "$DIR/perplace";           # tokenized perplace documents
+my $perplace_corps_freq = "$DIR/perplace";           # frequency of each token in the perplace documents.
+my $perplace_titles = "$DIR/perplace.titles";   # titles of each article in perplace
+my $stoplist   = "$DIR/common_words";   # common uninteresting words
+
+# @tank_vector
+#
+#   An array of hashes, each array index indicating a tank document's
+#   weight "vector". 
+
+my @tank_doc_vector = ( );
+
+# @plant_vector
+#
+#   An array of hashes, each array index indicating a plant document's
+#   weight "vector". 
+
+my @plant_doc_vector = ( );
+
+# @perplace_vector
+#
+#   An array of hashes, each array index indicating a perplace document's
+#   weight "vector". 
+
+my @perplace_doc_vector = ( );
+
+# %tank_doc_freq_hash
+#
+# associative array which holds <token, frequency> pairs where
+#
+#   token     = a particular word or tag found in the cacm corpus
+#   frequency = the total number of times the token appears in
+#               the corpus.
+
+my %tank_docs_freq_hash = ( );    
+
+# %plant_doc_freq_hash
+#
+# associative array which holds <token, frequency> pairs where
+#
+#   token     = a particular word or tag found in the cacm corpus
+#   frequency = the total number of times the token appears in
+#               the corpus.
+
+my %plant_docs_freq_hash = ( );    
+
+# %perplace_doc_freq_hash
+#
+# associative array which holds <token, frequency> pairs where
+#
+#   token     = a particular word or tag found in the cacm corpus
+#   frequency = the total number of times the token appears in
+#               the corpus.
+
+my %perplace_docs_freq_hash = ( );    
+
+# %tank_corp_freq_hash
+#
+# associative array which holds <token, frequency> pairs where
+#
+#   token     = a particular word or tag found in the corpus
+#   frequency = the total number of times the token appears per
+#               document-- that is a token is counted only once
+#               per document if it is present (even if it appears 
+#               several times within that document).
+
+my %tank_corp_freq_hash = ( );
+
+# %plant_corp_freq_hash
+#
+# associative array which holds <token, frequency> pairs where
+#
+#   token     = a particular word or tag found in the corpus
+#   frequency = the total number of times the token appears per
+#               document-- that is a token is counted only once
+#               per document if it is present (even if it appears 
+#               several times within that document).
+
+my %plant_corp_freq_hash = ( );
+
+# %perplace_corp_freq_hash
+#
+# associative array which holds <token, frequency> pairs where
+#
+#   token     = a particular word or tag found in the corpus
+#   frequency = the total number of times the token appears per
+#               document-- that is a token is counted only once
+#               per document if it is present (even if it appears 
+#               several times within that document).
+
+my %perplace_corp_freq_hash = ( );
+
+# %stoplist_hash
+#
+# common list of uninteresting words which are likely irrelvant
+# to any query.
+#
+#   Note: this is an associative array to provide fast lookups
+#         of these boring words
+
+my %stoplist_hash  = ( );
+
+# @tank_titles_vector
+#
+# vector of the cacm journal titles. Indexed in order of apperance
+# within the corpus.
+
+my @tank_titles_vector  = ( );
+
+# @plant_titles_vector
+#
+# vector of the cacm journal titles. Indexed in order of apperance
+# within the corpus.
+
+my @plant_titles_vector  = ( );
+
+# @perplace_titles_vector
+#
+# vector of the cacm journal titles. Indexed in order of apperance
+# within the corpus.
+
+my @perplace_titles_vector  = ( );
+
+
+# $tank_doc_num
+#
+# the total documents number of tank
+
+my $tank_doc_num =  0;
+
+# $plant_doc_num
+#
+# the total documents number of plant
+
+my $plant_doc_num =  0;
+
+# $perplace_doc_num
+#
+# the total documents number of perplace
+
+my $perplace_doc_num =  0;
+                                        
+# @tank_sensenum
+#
+# the sensenum array for tank
+
+my @tank_sensenum = ( );                                        
+
+# @plant_sensenum
+#
+# the sensenum array for plant
+
+my @plant_sensenum = ( );         
+
+# @perplace_sensenum
+#
+# the sensenum array for perplace
+
+my @perplace_sensenum = ( );         
+
+# %tank_vp1
+#
+# The Vprofile1 for tank
+
+my %tank_vp1 = ( );         
+
+# %tank_vp2
+#
+# The Vprofile2 for tank
+
+my %tank_vp2 = ( ); 
+
+# %plant_vp1
+#
+# The Vprofile1 for plant
+
+my %plant_vp1 = ( );         
+
+# %plant_vp2
+#
+# The Vprofile2 for plant
+
+my %plant_vp2 = ( );          
+
+# %perplace_vp1
+#
+# The Vprofile1 for perplace
+
+my %perplace_vp1 = ( );         
+
+# %perplace_vp2
+#
+# The Vprofile2 for perplace
+
+my %perplace_vp2 = ( );          
+
+# %tank_vp_1
+#
+# The Vprofile1 for tank (centroid)
+
+my %tank_vp_1 = ( );         
+
+# %tank_vp_2
+#
+# The Vprofile2 for tank (centroid)
+
+my %tank_vp_2 = ( ); 
+
+# %plant_vp_1
+#
+# The Vprofile1 for plant (centroid)
+
+my %plant_vp_1 = ( );         
+
+# %plant_vp_2
+#
+# The Vprofile2 for plant (centroid)
+
+my %plant_vp_2 = ( );          
+
+# %perplace_vp_1
+#
+# The Vprofile1 for perplace (centroid)
+
+my %perplace_vp_1 = ( );         
+
+# %perplace_vp_2
+#
+# The Vprofile2 for perplace (centroid)
+
+my %perplace_vp_2 = ( );          
+
+# $tank_total_correct
+#
+# The total number of correct hits of tank in the 400 testing data
+
+my $tank_total_correct = undef;
+
+# $tank_total_incorrect
+#
+# The total number of incorrect hits of tank in the 400 testing data
+
+my $tank_total_incorrect = undef;
+
+# $tank_correctness
+#
+# The overall correctness of TANK
+
+my $tank_correctness = undef;
+
+# $plant_total_correct
+#
+# The total number of correct hits of plant in the 400 testing data
+
+my $plant_total_correct = undef;
+
+# $plant_total_incorrect
+#
+# The total number of incorrect hits of plant in the 400 testing data
+
+my $plant_total_incorrect = undef;
+
+# $plant_correctness
+#
+# The overall correctness of PLANT
+
+my $plant_correctness = undef;
+
+# $perplace_total_correct
+#
+# The total number of correct hits of perplace in the 400 testing data
+
+my $perplace_total_correct = undef;
+
+# $perplace_total_incorrect
+#
+# The total number of incorrect hits of perplace in the 400 testing data
+
+my $perplace_total_incorrect = undef;
+
+# $perplace_correctness
+#
+# The overall correctness of PERPLACE
+
+my $perplace_correctness = undef;
+
+# @tank_result
+#
+# The result hash of the tank documents
+
+my %tank_result = ( );
+
+# @plant_result
+#
+# The result hash of the plant documents
+
+my %plant_result = ( );
+
+# @perplace_result
+#
+# The result hash of the perplace documents
+
+my %perplace_result = ( );
+
+# $token_format
+#
+# The format of token we will use, either stemmed or unstemmed
+
+my $token_format = "stemmed";
+
+# $similarity
+#
+# The similarity we will use, default is cosine
+
+my $sim_type = "cosine";
+
+# $pos_weight
+#
+# The type of position weight we will use
+
+my $pos_weight = "uniform";
+
+# $lcm
+#
+# The type of local collocation modelling we will use
+
+my $lcm = "bag-of-words";
+
+
+# start program
+
+&main_loop;
+                                        
+##########################################################
+##  INIT_DOC_VECTORS
+##
+##  This function reads in tokens from the document file.
+##  When a .I token is encountered, indicating a document
+##  break, a new vector is begun. When individual terms
+##  are encountered, they are added to a running sum of
+##  term frequencies. To save time and space, it is possible
+##  to normalize these term frequencies by inverse document
+##  frequency (or whatever other weighting strategy is
+##  being used) while the terms are being summed or in
+##  a posthoc pass.  The 2D vector array 
+##
+##    $doc_vector[ $doc_num ]{ $term }
+##
+##  stores these normalized term weights.
+##
+##  It is possible to weight different regions of the document
+##  differently depending on likely importance to the classification.
+##  The relative base weighting factors can be set when 
+##  different segment boundaries are encountered.
+##
+##  This function is currently set up for simple TF weighting.
+##########################################################
+
+sub init_doc_vectors {
+	
+	my @pos_array = ();	# this array is used to tmp store tokens
+	my $x_pos = undef;	# the position of the X.- token
+	my $i = undef;	# the tag i used to tag the current index
+	
+    # if ($doc_type eq "tank") {
+        my $tank_token_docs_fh = new FileHandle $tank_token_docs, "r"
+        or croak "Failed $tank_token_docs";
+        push @tank_sensenum, 0;	# push one empty value into @tank_sensenum so that
+																	# indices correspond with document numbers
+        push @tank_doc_vector, { };     # push one empty value onto @doc_vector so that
+                                                                # indices correspond with document numbers
+    # }
+    # elsif ($doc_type eq "plant") {
+        my $plant_token_docs_fh = new FileHandle $plant_token_docs, "r"
+        or croak "Failed $plant_token_docs";        
+        push @plant_sensenum, 0;	# push one empty value into @plant_sensenum so that
+																		# indices correspond with document numbers
+        push @plant_doc_vector, { };     # push one empty value onto @doc_vector so that
+                                                                  # indices correspond with document numbers
+    # }
+    # else {
+        my $perplace_token_docs_fh = new FileHandle $perplace_token_docs, "r"
+        or croak "Failed $perplace_token_docs";
+        push @perplace_sensenum, 0;	# push one empty value into @perplace_sensenum so that
+																				# indices correspond with document numbers
+        push @perplace_doc_vector, { };     # push one empty value onto @doc_vector so that
+                                                                  # indices correspond with document numbers
+    # }
+
+    my $word = undef;
+	my $tweight =  1;    # current weight assigned to document token - uniform - default
+	
+	# tank doc vector initialization
+	#
+	#######
+    $tank_doc_num =  0;    # current document number and total docs at end
+    # $tweight =  0;    # current weight assigned to document token
+
+    while (defined( $word = <$tank_token_docs_fh> )) {
+    
+        chomp $word;
+        # last if $word =~ /^\.I 0/; # indicates end of file so kick out
+        
+        if ($word =~ /^\.I/) {     # indicates start of a new document
+			# special case operation for non-uniform weighting
+			if (($pos_weight ne "uniform") and $#pos_array > -1) {
+					if ($pos_weight eq "expndecay") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $tank_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 0) {
+													$tank_doc_vector[$tank_doc_num]{ $pos_array[$i]} = 0;
+												}
+												else {
+													$tank_doc_vector[$tank_doc_num]{$pos_array[$i]} += 1 / abs($i - $x_pos);
+												}
+												if ($tank_sensenum[$tank_doc_num] == 1 and $tank_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 0) {
+														$tank_vp1{$tank_doc_num}{$pos_array[$i]} = 0;
+													}
+													else {
+														$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+													}
+												}
+												if ($tank_sensenum[$tank_doc_num] == 2 and $tank_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 0) {
+														$tank_vp2{$tank_doc_num}{$pos_array[$i]} = 0;
+													}
+													else {
+														$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					
+					if ($pos_weight eq "stepped") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $tank_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 1) {
+													$tank_doc_vector[$tank_doc_num]{ $pos_array[$i]} += 6;
+												}
+												if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+													$tank_doc_vector[$tank_doc_num]{ $pos_array[$i]} += 3;
+												}
+												else {
+													$tank_doc_vector[$tank_doc_num]{$pos_array[$i]} += 1;
+												}
+												if ($tank_sensenum[$tank_doc_num] == 1 and $tank_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 6;
+													}
+													if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+														$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 3;
+													}
+													else {
+														$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+												if ($tank_sensenum[$tank_doc_num] == 2 and $tank_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 6;
+													}
+													if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+														$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 3;
+													}
+													else {
+														$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					
+					# customized weighting : adjacent has weighting of 2, others 1
+					if ($pos_weight eq "customized") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $tank_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 1) {
+													$tank_doc_vector[$tank_doc_num]{ $pos_array[$i]} += 2;
+												}
+												else {
+													$tank_doc_vector[$tank_doc_num]{$pos_array[$i]} += 1;
+												}
+												if ($tank_sensenum[$tank_doc_num] == 1 and $tank_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 2;
+													}
+													else {
+														$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+												if ($tank_sensenum[$tank_doc_num] == 2 and $tank_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 2;
+													}
+													else {
+														$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					# clean up
+					$i = 0;
+					@pos_array = ();
+					$x_pos = undef;
+			}
+			
+            my @line = split /\s+/, $word;
+            # print $line[1];
+            push @tank_sensenum, $line[2];
+            push @tank_doc_vector, { };
+            $tank_doc_num++;
+            
+            next;
+        }
+        
+        # special operation for non-uniform
+        # we push the token into a tmp array
+        if ($pos_weight ne "uniform") {
+				if ($word =~ /[a-zA-Z]/) {
+						if ($word =~ /^\.X-/ and $word !~ /[\+]/) {
+								$x_pos = $i;
+						}
+						if ($word =~ /^\.x-/ and $word !~ /[\+]/) {
+								$x_pos = $i;
+						}
+						if (defined( $tank_docs_freq_hash{ $word } )) {
+								push @pos_array, $word;
+						}
+						else {
+								print "ERROR: Document frequency of zero: ", $word, "\n";
+						}
+				}
+				$i++;
+		}
+		
+		# weighting algo when using the uniformed weight - default
+        else{
+				if ($word =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $word }) {
+					if (defined( $tank_docs_freq_hash{ $word } )) {
+						$tank_doc_vector[$tank_doc_num]{ $word } += $tweight;
+						if ($tank_sensenum[$tank_doc_num] == 1 and $tank_doc_num <= 3600) {
+							$tank_vp1{$tank_doc_num}{$word} += $tweight;
+						}
+						if ($tank_sensenum[$tank_doc_num] == 2 and $tank_doc_num <= 3600) {
+							$tank_vp2{$tank_doc_num}{$word} += $tweight;
+						}
+					}
+					else {
+						print "ERROR: Document frequency of zero: ", $word, "\n";
+					}
+				}
+		}
+    }
+    
+    # special case for last document
+    if (($pos_weight ne "uniform") and $#pos_array > -1) {
+			if ($pos_weight eq "expndecay") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $tank_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 0) {
+											$tank_doc_vector[$tank_doc_num]{ $pos_array[$i]} = 0;
+										}
+										else {
+											$tank_doc_vector[$tank_doc_num]{$pos_array[$i]} += 1 / abs($i - $x_pos);
+											# print "=> " . $tank_doc_vector[$tank_doc_num]{$pos_array[$i]} . "\n";
+										}
+										if ($tank_sensenum[$tank_doc_num] == 1 and $tank_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 0) {
+												$tank_vp1{$tank_doc_num}{$pos_array[$i]} = 0;
+											}
+											else {
+												$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+											}
+										}
+										if ($tank_sensenum[$tank_doc_num] == 2 and $tank_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 0) {
+												$tank_vp2{$tank_doc_num}{$pos_array[$i]} = 0;
+											}
+											else {
+												$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			if ($pos_weight eq "stepped") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $tank_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 1) {
+											$tank_doc_vector[$tank_doc_num]{ $pos_array[$i]} += 6;
+										}
+										if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+											$tank_doc_vector[$tank_doc_num]{ $pos_array[$i]} += 3;
+										}
+										else {
+											$tank_doc_vector[$tank_doc_num]{$pos_array[$i]} += 1;
+										}
+										if ($tank_sensenum[$tank_doc_num] == 1 and $tank_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 6;
+											}
+											if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+												$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 3;
+											}
+											else {
+												$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+										if ($tank_sensenum[$tank_doc_num] == 2 and $tank_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 6;
+											}
+											if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+												$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 3;
+											}
+											else {
+												$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			# customized weighting : adjacent has weighting of 2, others 1
+			if ($pos_weight eq "customized") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $tank_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 1) {
+											$tank_doc_vector[$tank_doc_num]{ $pos_array[$i]} += 2;
+										}
+										else {
+											$tank_doc_vector[$tank_doc_num]{$pos_array[$i]} += 1;
+										}
+										if ($tank_sensenum[$tank_doc_num] == 1 and $tank_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 2;
+											}
+											else {
+												$tank_vp1{$tank_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+										if ($tank_sensenum[$tank_doc_num] == 2 and $tank_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 2;
+											}
+											else {
+												$tank_vp2{$tank_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			# clean up
+			$i = 0;
+			@pos_array = ();
+			$x_pos = undef;
+	}
+    
+    
+    
+    # plant doc vector initialization
+	#
+	#######
+    $plant_doc_num =  0;    # current document number and total docs at end
+    # $tweight =  0;    # current weight assigned to document token
+
+    while (defined( $word = <$plant_token_docs_fh> )) {
+    
+        chomp $word;
+        # last if $word =~ /^\.I 0/; # indicates end of file so kick out
+        
+        if ($word =~ /^\.I/) {     # indicates start of a new document
+			# special case operation for non-uniform weighting
+			if (($pos_weight ne "uniform") and $#pos_array > -1) {
+					if ($pos_weight eq "expndecay") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $plant_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 0) {
+													$plant_doc_vector[$plant_doc_num]{ $pos_array[$i]} = 0;
+												}
+												else {
+													$plant_doc_vector[$plant_doc_num]{$pos_array[$i]} += 1 / abs($i - $x_pos);
+												}
+												if ($plant_sensenum[$plant_doc_num] == 1 and $plant_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 0) {
+														$plant_vp1{$plant_doc_num}{$pos_array[$i]} = 0;
+													}
+													else {
+														$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+													}
+												}
+												if ($plant_sensenum[$plant_doc_num] == 2 and $plant_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 0) {
+														$plant_vp2{$plant_doc_num}{$pos_array[$i]} = 0;
+													}
+													else {
+														$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					
+					if ($pos_weight eq "stepped") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $plant_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 1) {
+													$plant_doc_vector[$plant_doc_num]{ $pos_array[$i]} += 6;
+												}
+												if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+													$plant_doc_vector[$plant_doc_num]{ $pos_array[$i]} += 3;
+												}
+												else {
+													$plant_doc_vector[$plant_doc_num]{$pos_array[$i]} += 1;
+												}
+												if ($plant_sensenum[$plant_doc_num] == 1 and $plant_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 6;
+													}
+													if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+														$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 3;
+													}
+													else {
+														$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+												if ($plant_sensenum[$plant_doc_num] == 2 and $plant_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 6;
+													}
+													if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+														$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 3;
+													}
+													else {
+														$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					
+					# customized weighting: adjacent 2, others 1
+					if ($pos_weight eq "customized") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $plant_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 1) {
+													$plant_doc_vector[$plant_doc_num]{ $pos_array[$i]} += 2;
+												}
+												else {
+													$plant_doc_vector[$plant_doc_num]{$pos_array[$i]} += 1;
+												}
+												if ($plant_sensenum[$plant_doc_num] == 1 and $plant_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 2;
+													}
+													else {
+														$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+												if ($plant_sensenum[$plant_doc_num] == 2 and $plant_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 2;
+													}
+													else {
+														$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					# clean up
+					$i = 0;
+					@pos_array = ();
+					$x_pos = undef;
+			}
+            my @line = split /\s+/, $word;
+            # print $line[1];
+            push @plant_sensenum, $line[2];
+            push @plant_doc_vector, { };
+            $plant_doc_num++;
+
+            next;
+        }
+
+		 # special operation for non-uniform
+        # we push the token into a tmp array
+        if ($pos_weight ne "uniform") {
+				if ($word =~ /[a-zA-Z]/) {
+						if ($word =~ /^\.X-/ and $word !~ /[\+]/) {
+								$x_pos = $i;
+						}
+						if ($word =~ /^\.x-/ and $word !~ /[\+]/) {
+								$x_pos = $i;
+						}
+						if (defined( $plant_docs_freq_hash{ $word } )) {
+								push @pos_array, $word;
+						}
+						else {
+								print "ERROR: Document frequency of zero: ", $word, "\n";
+						}
+				}
+				$i++;
+		}
+		else {
+				if ($word =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $word }) {
+					if (defined( $plant_docs_freq_hash{ $word } )) {
+						$plant_doc_vector[$plant_doc_num]{ $word } += $tweight;
+						if ($plant_sensenum[$plant_doc_num] == 1 and $plant_doc_num <= 3600) {
+							$plant_vp1{$plant_doc_num}{$word} += $tweight;
+						}
+						if ($plant_sensenum[$plant_doc_num] == 2 and $plant_doc_num <= 3600) {
+							$plant_vp2{$plant_doc_num}{$word} += $tweight;
+						}
+					}
+					else {
+						print "ERROR: Document frequency of zero: ", $word, "\n";
+					}
+				}
+		}
+    }
+    # do it one more time
+	if (($pos_weight ne "uniform") and $#pos_array > -1) {
+			if ($pos_weight eq "expndecay") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $plant_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 0) {
+											$plant_doc_vector[$plant_doc_num]{ $pos_array[$i]} = 0;
+										}
+										else {
+											$plant_doc_vector[$plant_doc_num]{$pos_array[$i]} += 1 / abs($i - $x_pos);
+										}
+										if ($plant_sensenum[$plant_doc_num] == 1 and $plant_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 0) {
+												$plant_vp1{$plant_doc_num}{$pos_array[$i]} = 0;
+											}
+											else {
+												$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+											}
+										}
+										if ($plant_sensenum[$plant_doc_num] == 2 and $plant_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 0) {
+												$plant_vp2{$plant_doc_num}{$pos_array[$i]} = 0;
+											}
+											else {
+												$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			
+			if ($pos_weight eq "stepped") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $plant_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 1) {
+											$plant_doc_vector[$plant_doc_num]{ $pos_array[$i]} += 6;
+										}
+										if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+											$plant_doc_vector[$plant_doc_num]{ $pos_array[$i]} += 3;
+										}
+										else {
+											$plant_doc_vector[$plant_doc_num]{$pos_array[$i]} += 1;
+										}
+										if ($plant_sensenum[$plant_doc_num] == 1 and $plant_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 6;
+											}
+											if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+												$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 3;
+											}
+											else {
+												$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+										if ($plant_sensenum[$plant_doc_num] == 2 and $plant_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 6;
+											}
+											if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+												$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 3;
+											}
+											else {
+												$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			# customized weighting: adjacent 2, others 1
+			if ($pos_weight eq "customized") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $plant_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 1) {
+											$plant_doc_vector[$plant_doc_num]{ $pos_array[$i]} += 2;
+										}
+										else {
+											$plant_doc_vector[$plant_doc_num]{$pos_array[$i]} += 1;
+										}
+										if ($plant_sensenum[$plant_doc_num] == 1 and $plant_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 2;
+											}
+											else {
+												$plant_vp1{$plant_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+										if ($plant_sensenum[$plant_doc_num] == 2 and $plant_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 2;
+											}
+											else {
+												$plant_vp2{$plant_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			# clean up
+			$i = 0;
+			@pos_array = ();
+			$x_pos = undef;
+	}
+    
+    
+    
+    
+    # perplace doc vector initialization
+	#
+	#######
+    $perplace_doc_num =  0;    # current document number and total docs at end
+    # $tweight =  0;    # current weight assigned to document token
+
+    while (defined( $word = <$perplace_token_docs_fh> )) {
+    
+        chomp $word;
+        # last if $word =~ /^\.I 0/; # indicates end of file so kick out
+        
+        if ($word =~ /^\.I/) {     # indicates start of a new document
+			# special case operation for non-uniform weighting
+			if (($pos_weight ne "uniform") and $#pos_array > -1) {
+					if ($pos_weight eq "expndecay") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $perplace_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 0) {
+													$perplace_doc_vector[$perplace_doc_num]{ $pos_array[$i]} = 0;
+												}
+												else {
+													$perplace_doc_vector[$perplace_doc_num]{$pos_array[$i]} += 1 / abs($i - $x_pos);
+												}
+												if ($perplace_sensenum[$perplace_doc_num] == 1 and $perplace_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 0) {
+														$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} = 0;
+													}
+													else {
+														$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+													}
+												}
+												if ($perplace_sensenum[$perplace_doc_num] == 2 and $perplace_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 0) {
+														$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} = 0;
+													}
+													else {
+														$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					
+					if ($pos_weight eq "stepped") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $perplace_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 1) {
+													$perplace_doc_vector[$perplace_doc_num]{ $pos_array[$i]} += 6;
+												}
+												if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+													$perplace_doc_vector[$perplace_doc_num]{ $pos_array[$i]} += 3;
+												}
+												else {
+													$perplace_doc_vector[$perplace_doc_num]{$pos_array[$i]} += 1;
+												}
+												if ($perplace_sensenum[$perplace_doc_num] == 1 and $perplace_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 6;
+													}
+													if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+														$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 3;
+													}
+													else {
+														$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+												if ($perplace_sensenum[$perplace_doc_num] == 2 and $perplace_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 6;
+													}
+													if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+														$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 3;
+													}
+													else {
+														$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					# customized weighting: adjacent 2, others 1
+					if ($pos_weight eq "customized") {
+						# we add each token in the tmp array into our vector using expndecay weighting
+						for (my $i=0; $i<=$#pos_array;$i++) {
+								if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+										if (defined( $perplace_docs_freq_hash{ $pos_array[$i] } )) {
+												if (abs($i - $x_pos) == 1) {
+													$perplace_doc_vector[$perplace_doc_num]{ $pos_array[$i]} += 2;
+												}
+												else {
+													$perplace_doc_vector[$perplace_doc_num]{$pos_array[$i]} += 1;
+												}
+												if ($perplace_sensenum[$perplace_doc_num] == 1 and $perplace_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 2;
+													}
+													else {
+														$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+												if ($perplace_sensenum[$perplace_doc_num] == 2 and $perplace_doc_num <= 3600) {
+													if (abs($i - $x_pos) == 1) {
+														$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 2;
+													}
+													else {
+														$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 1;
+													}
+												}
+									}
+									else {
+											print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+									}
+							}
+						}
+					}
+					# clean up
+					$i = 0;
+					@pos_array = ();
+					$x_pos = undef;
+			}
+            my @line = split /\s+/, $word;
+            # print $line[2];
+            push @perplace_sensenum, $line[2];
+            push @perplace_doc_vector, { };
+            $perplace_doc_num++;
+
+            next;
+        }
+        
+		# special operation for non-uniform
+        # we push the token into a tmp array
+        if ($pos_weight ne "uniform") {
+				if ($word =~ /[a-zA-Z]/) {
+						if ($word =~ /^\.X-/ and $word !~ /[\+]/) {
+								$x_pos = $i;
+						}
+						if ($word =~ /^\.x-/ and $word !~ /[\+]/) {
+								$x_pos = $i;
+						}
+						if (defined( $perplace_docs_freq_hash{ $word } )) {
+								push @pos_array, $word;
+						}
+						else {
+								print "ERROR: Document frequency of zero: ", $word, "\n";
+						}
+				}
+				$i++;
+		}
+		else {
+				if ($word =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $word }) {
+					if (defined( $perplace_docs_freq_hash{ $word } )) {
+						$perplace_doc_vector[$perplace_doc_num]{ $word } += $tweight;
+						if ($perplace_sensenum[$perplace_doc_num] == 1 and $perplace_doc_num <= 3600) {
+							$perplace_vp1{$perplace_doc_num}{$word} += $tweight;
+						}
+						if ($perplace_sensenum[$perplace_doc_num] == 2 and $perplace_doc_num <= 3600) {
+							$perplace_vp2{$perplace_doc_num}{$word} += $tweight;
+						}
+					}
+					else {
+						print "ERROR: Document frequency of zero: ", $word, "\n";
+					}
+				}
+		}
+    }
+    # special case operation for non-uniform weighting
+	if (($pos_weight ne "uniform") and $#pos_array > -1) {
+			if ($pos_weight eq "expndecay") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $perplace_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 0) {
+											$perplace_doc_vector[$perplace_doc_num]{ $pos_array[$i]} = 0;
+										}
+										else {
+											$perplace_doc_vector[$perplace_doc_num]{$pos_array[$i]} += 1 / abs($i - $x_pos);
+										}
+										if ($perplace_sensenum[$plant_doc_num] == 1 and $perplace_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 0) {
+												$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} = 0;
+											}
+											else {
+												$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+											}
+										}
+										if ($perplace_sensenum[$perplace_doc_num] == 2 and $perplace_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 0) {
+												$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} = 0;
+											}
+											else {
+												$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 1 / abs($i - $x_pos);
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			
+			if ($pos_weight eq "stepped") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $perplace_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 1) {
+											$perplace_doc_vector[$perplace_doc_num]{ $pos_array[$i]} += 6;
+										}
+										if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+											$perplace_doc_vector[$perplace_doc_num]{ $pos_array[$i]} += 3;
+										}
+										else {
+											$perplace_doc_vector[$perplace_doc_num]{$pos_array[$i]} += 1;
+										}
+										if ($perplace_sensenum[$perplace_doc_num] == 1 and $perplace_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 6;
+											}
+											if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+												$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 3;
+											}
+											else {
+												$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+										if ($perplace_sensenum[$perplace_doc_num] == 2 and $perplace_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 6;
+											}
+											if (abs($i - $x_pos) == 2 or abs($i - $x_pos) == 3) {
+												$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 3;
+											}
+											else {
+												$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			
+			# customized weighting: adjacent 2, others 1
+			if ($pos_weight eq "customized") {
+				# we add each token in the tmp array into our vector using expndecay weighting
+				for (my $i=0; $i<=$#pos_array;$i++) {
+						if ($pos_array[$i] =~ /[a-zA-Z]/ and ! exists $stoplist_hash{ $pos_array[$i] }) {
+								if (defined( $perplace_docs_freq_hash{ $pos_array[$i] } )) {
+										if (abs($i - $x_pos) == 1) {
+											$perplace_doc_vector[$perplace_doc_num]{ $pos_array[$i]} += 2;
+										}
+										else {
+											$perplace_doc_vector[$perplace_doc_num]{$pos_array[$i]} += 1;
+										}
+										if ($perplace_sensenum[$perplace_doc_num] == 1 and $perplace_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 2;
+											}
+											else {
+												$perplace_vp1{$perplace_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+										if ($perplace_sensenum[$perplace_doc_num] == 2 and $perplace_doc_num <= 3600) {
+											if (abs($i - $x_pos) == 1) {
+												$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 2;
+											}
+											else {
+												$perplace_vp2{$perplace_doc_num}{$pos_array[$i]} += 1;
+											}
+										}
+							}
+							else {
+									print "ERROR: Document frequency of zero: ", $pos_array[$i], "\n";
+							}
+					}
+				}
+			}
+			# clean up
+			$i = 0;
+			@pos_array = ();
+			$x_pos = undef;
+	}
+}                                        
+
+##########################################################
+##  TF_IDF
+##
+##  This function calculate the TF IDF weighting based on RAW TF
+##########################################################
+
+sub tf_idf {
+	
+    # optionally normalize the raw term frequency
+    #
+    # foreach my $hash (@doc_vector) {
+    #	  foreach my $key (keys %{ $hash }) {
+    #         $hash{ $key } = log( $doc_num / $docs_freq_hash{ $key });
+    #     }
+    # }
+    my $i = 0;
+    
+    # calculate TF IDF on tank_doc_vector
+    foreach my $hash (@tank_doc_vector) {
+		foreach my $key (keys %{$hash}) {
+			$hash->{$key} = ($hash->{$key}* log($tank_doc_num / $tank_docs_freq_hash{ $key }));
+			if ($tank_sensenum[$i] == 1 and $i <= 3600) {
+				$tank_vp1{$i}{$key} = $hash->{$key} ;
+			}
+			if ($tank_sensenum[$i] == 2 and $i <= 3600) {
+				$tank_vp2{$i}{$key} = $hash->{$key};
+			}
+		}
+		$i++;
+    }
+    $i = 0;
+    
+    # calculate TF IDF on doc_vector
+    foreach my $hash (@plant_doc_vector) {
+		foreach my $key (keys %{$hash}) {
+			$hash->{$key} = ($hash->{$key}* log($plant_doc_num / $plant_docs_freq_hash{ $key }));
+			if ($plant_sensenum[$i] == 1 and $i <= 3600) {
+				$plant_vp1{$i}{$key} = $hash->{$key} ;
+			}
+			if ($plant_sensenum[$i] == 2 and $i <= 3600) {
+				$plant_vp2{$i}{$key} = $hash->{$key};
+			}
+		}
+		$i++;
+    }
+    $i = 0;
+    
+    # calculate TF IDF on perplace_doc_vector
+    foreach my $hash (@perplace_doc_vector) {
+		foreach my $key (keys %{$hash}) {
+			$hash->{$key} = ($hash->{$key}* log($perplace_doc_num / $perplace_docs_freq_hash{ $key }));
+			if ($perplace_sensenum[$i] == 1 and $i <= 3600) {
+				$perplace_vp1{$i}{$key} = $hash->{$key} ;
+			}
+			if ($perplace_sensenum[$i] == 2 and $i <= 3600) {
+				$perplace_vp2{$i}{$key} = $hash->{$key};
+			}
+		}
+		$i++;
+    }
+    $i = 0;
+}
+
+##########################################################
+##  TERM_NORM
+##
+##  This function will normalize the term weight
+##########################################################
+
+sub term_norm{
+    my $i = 0;
+    
+    # normalize the terms on tank_doc_vector
+    foreach my $hash (@tank_doc_vector) {
+		# calculat the total normalized weight sum
+		my $weight_sum = 0;
+		foreach my $key (keys %{$hash}) {
+			$weight_sum += ($hash->{$key} ** 2);
+		}
+		# do the normalize
+		foreach my $key (keys %{$hash}) {
+			$hash->{$key} = ($hash->{$key} / sqrt($weight_sum));
+			if ($tank_sensenum[$i] == 1 and $i <= 3600) {
+				$tank_vp1{$i}{$key} = $hash->{$key} ;
+			}
+			if ($tank_sensenum[$i] == 2 and $i <= 3600) {
+				$tank_vp2{$i}{$key} = $hash->{$key};
+			}
+		}
+		$i++;
+    }
+    $i = 0;
+    
+    
+    # normalize the terms on plant_doc_vector
+    foreach my $hash (@plant_doc_vector) {
+		# calculat the total normalized weight sum
+		my $weight_sum = 0;
+		foreach my $key (keys %{$hash}) {
+			$weight_sum += ($hash->{$key} ** 2);
+		}
+		# do the normalize
+		foreach my $key (keys %{$hash}) {
+			$hash->{$key} = ($hash->{$key} / sqrt($weight_sum));
+			if ($plant_sensenum[$i] == 1 and $i <= 3600) {
+				$plant_vp1{$i}{$key} = $hash->{$key} ;
+			}
+			if ($plant_sensenum[$i] == 2 and $i <= 3600) {
+				$plant_vp2{$i}{$key} = $hash->{$key};
+			}
+		}
+		$i++;
+    }
+    $i = 0;
+    
+    # normalize the terms on perplace_doc_vector
+    foreach my $hash (@perplace_doc_vector) {
+		# calculat the total normalized weight sum
+		my $weight_sum = 0;
+		foreach my $key (keys %{$hash}) {
+			$weight_sum += ($hash->{$key} ** 2);
+		}
+		# do the normalize
+		foreach my $key (keys %{$hash}) {
+			$hash->{$key} = ($hash->{$key} / sqrt($weight_sum));
+			if ($perplace_sensenum[$i] == 1 and $i <= 3600) {
+				$perplace_vp1{$i}{$key} = $hash->{$key} ;
+			}
+			if ($perplace_sensenum[$i] == 2 and $i <= 3600) {
+				$perplace_vp2{$i}{$key} = $hash->{$key};
+			}
+		}
+		$i++;
+    }
+    $i = 0;
+}
+
+##########################################################
+##  CENTROID
+##
+##  This function will calculate the centroid value
+##########################################################
+
+sub centroid {
+	# sum and calculate the avg weight of each term for tank_vp1
+	while ((my $doc_num, my $terms) = each %tank_vp1) {
+		while ((my $term, my $weight) = each %{$terms}) {
+			$tank_vp_1{$term} += $weight;
+		}
+	}
+	my $tank_vp1_len = keys %tank_vp1;
+	# print "$tank_vp1_len\n";
+	while ((my $term, my $weight) = each %tank_vp_1) {
+		$tank_vp_1{$term} = $weight / $tank_vp1_len;
+	}
+	
+	# sum and calculate the avg weight of each term for tank_vp2
+	while ((my $doc_num, my $terms) = each %tank_vp2) {
+		while ((my $term, my $weight) = each %{$terms}) {
+			$tank_vp_2{$term} += $weight;
+		}
+	}
+	my $tank_vp2_len = keys %tank_vp2;
+	# print "$tank_vp2_len\n";
+	while ((my $term, my $weight) = each %tank_vp_2) {
+		$tank_vp_2{$term} = $weight / $tank_vp2_len;
+	}
+	
+	# sum and calculate the avg weight of each term for plant_vp1
+	while ((my $doc_num, my $terms) = each %plant_vp1) {
+		while ((my $term, my $weight) = each %{$terms}) {
+			$plant_vp_1{$term} += $weight;
+		}
+	}
+	my $plant_vp1_len = keys %plant_vp1;
+	# print "$plant_vp1_len\n";
+	while ((my $term, my $weight) = each %plant_vp_1) {
+		$plant_vp_1{$term} = $weight / $plant_vp1_len;
+	}
+	
+	# sum and calculate the avg weight of each term for plant_vp2
+	while ((my $doc_num, my $terms) = each %plant_vp2) {
+		while ((my $term, my $weight) = each %{$terms}) {
+			$plant_vp_2{$term} += $weight;
+		}
+	}
+	my $plant_vp2_len = keys %plant_vp2;
+	# print "$plant_vp2_len\n";
+	while ((my $term, my $weight) = each %plant_vp_2) {
+		$plant_vp_2{$term} = $weight / $plant_vp2_len;
+	}
+	
+	# sum and calculate the avg weight of each term for perplace_vp1
+	while ((my $doc_num, my $terms) = each %perplace_vp1) {
+		while ((my $term, my $weight) = each %{$terms}) {
+			$perplace_vp_1{$term} += $weight;
+		}
+	}
+	my $perplace_vp1_len = keys %perplace_vp1;
+	# print "$perplace_vp1_len\n";
+	while ((my $term, my $weight) = each %perplace_vp_1) {
+		$perplace_vp_1{$term} = $weight / $perplace_vp1_len;
+	}
+	
+	# sum and calculate the avg weight of each term for perplace_vp2
+	while ((my $doc_num, my $terms) = each %perplace_vp2) {
+		while ((my $term, my $weight) = each %{$terms}) {
+			$perplace_vp_2{$term} += $weight;
+		}
+	}
+	my $perplace_vp2_len = keys %perplace_vp2;
+	# print "$perplace_vp2_len\n";
+	while ((my $term, my $weight) = each %perplace_vp_2) {
+		$perplace_vp_2{$term} = $weight / $perplace_vp2_len;
+	}
+	# while ((my $term, my $weight) = each %perplace_vp_2) {
+		# print "$term => $weight\n";
+	# }
+}
+
+##########################################################
+##  CALC_SIM
+##
+##  This function will calculate the similarity between vectors
+##########################################################
+sub calc_sim {
+		my $doc_type = shift;	# The document type we will work on
+		my $label = undef;
+	
+		# calculate similarity on tank
+		if ($doc_type eq "TANK") {
+				# initialize the variables
+				$tank_total_correct = 0;
+				$tank_total_incorrect = 0;
+				%tank_result = ();
+				
+				for (3601 .. 4000) {
+					my $sim1 = &cosine_sim_a(\%tank_vp_1, $tank_doc_vector[$_]) if $sim_type eq "cosine";
+					my $sim2 = &cosine_sim_a(\%tank_vp_2, $tank_doc_vector[$_]) if $sim_type eq "cosine";
+					
+					my $sim = $sim1 - $sim2;
+					# label the current line
+					if ($sim1 > $sim2) {
+						# TODO label as 1
+						$label = 1;
+					}
+					else {
+						# TODO label as 2
+						$label = 2;
+					}
+					# check the correctness of the current line
+					my $print_sim1 = sprintf "%0.5f", $sim1;
+					my $print_sim2 = sprintf "%0.5f", $sim2;
+					my $print_sim = sprintf "%0.5f", $sim;
+					if ($sim >= 0) {
+						$print_sim = "+" .  $print_sim;
+					}
+					if ($label == $tank_sensenum[$_]) {
+						$tank_total_correct++;
+						$tank_result{$sim} = ("+   $print_sim $print_sim1 $print_sim2   " . substr ($tank_titles_vector[$_], 0, 60) . "\n");
+					}
+					else {
+						$tank_total_incorrect++;
+						$tank_result{$sim} = ("*   $print_sim $print_sim1 $print_sim2   " . substr ($tank_titles_vector[$_], 0, 60) . "\n");
+					}
+				}
+				$tank_correctness = $tank_total_correct / ($tank_total_correct + $tank_total_incorrect);
+		}
+
+		if ($doc_type eq "PLANT") {
+				# initialize the variables
+				$plant_total_correct = 0;
+				$plant_total_incorrect = 0;
+				%plant_result = ();
+				# calculate similarity on plant
+				for (3601 .. 4000) {
+					my $sim1 = &cosine_sim_a(\%plant_vp_1, $plant_doc_vector[$_]) if $sim_type eq "cosine";
+					my $sim2 = &cosine_sim_a(\%plant_vp_2, $plant_doc_vector[$_]) if $sim_type eq "cosine";
+					
+					my $sim = $sim1 - $sim2;
+					# label the current line
+					if ($sim1 > $sim2) {
+						# TODO label as 1
+						$label = 1;
+					}
+					else {
+						# TODO label as 2
+						$label = 2;
+					}
+					# check the correctness of the current line
+					my $print_sim1 = sprintf "%0.5f", $sim1;
+					my $print_sim2 = sprintf "%0.5f", $sim2;
+					my $print_sim = sprintf "%0.5f", $sim;
+					if ($sim >= 0) {
+						$print_sim = "+" .  $print_sim;
+					}
+					if ($label == $plant_sensenum[$_]) {
+						$plant_total_correct++;
+						$plant_result{$sim} = ("+   $print_sim $print_sim1 $print_sim2   " . substr ($plant_titles_vector[$_], 0, 60) . "\n");
+					}
+					else {
+						$plant_total_incorrect++;
+						$plant_result{$sim} = ("*   $print_sim $print_sim1 $print_sim2   " . substr ($plant_titles_vector[$_], 0, 60) . "\n");
+					}
+				}
+				$plant_correctness = $plant_total_correct / ($plant_total_correct + $plant_total_incorrect);
+		}
+		
+		if ($doc_type eq "PERPLACE") {
+				# initialize the variables
+				$perplace_total_correct = 0;
+				$perplace_total_incorrect = 0;
+				%perplace_result = ();
+				
+				# calculate similarity on perplace
+				for (3601 .. 4000) {
+					my $sim1 = &cosine_sim_a(\%perplace_vp_1, $perplace_doc_vector[$_]) if $sim_type eq "cosine";
+					my $sim2 = &cosine_sim_a(\%perplace_vp_2, $perplace_doc_vector[$_]) if $sim_type eq "cosine";
+					
+					my $sim = $sim1 - $sim2;
+					# label the current line
+					if ($sim1 > $sim2) {
+						# TODO label as 1
+						$label = 1;
+					}
+					else {
+						# TODO label as 2
+						$label = 2;
+					}
+					# check the correctness of the current line
+					my $print_sim1 = sprintf "%0.5f", $sim1;
+					my $print_sim2 = sprintf "%0.5f", $sim2;
+					my $print_sim = sprintf "%0.5f", $sim;
+					if ($sim >= 0) {
+						$print_sim = "+" .  $print_sim;
+					}
+					if ($label == $perplace_sensenum[$_]) {
+						$perplace_total_correct++;
+						$perplace_result{$sim} = ("+   $print_sim $print_sim1 $print_sim2   " . substr ($perplace_titles_vector[$_], 0, 60) . "\n");
+					}
+					else {
+						$perplace_total_incorrect++;
+						$perplace_result{$sim} = ("*   $print_sim $print_sim1 $print_sim2   " . substr ($perplace_titles_vector[$_], 0, 60) . "\n");
+					}
+				}
+				$perplace_correctness = $perplace_total_correct / ($perplace_total_correct + $perplace_total_incorrect);
+		}
+
+}
+
+##########################################################
+##  SHOW_RESULT
+##
+##  This function will print the similarity results
+##########################################################
+sub show_result {
+		my $doc_type = shift;
+		print << "EndOfList";
+
+*************************************************************************
+       Documents Classify Result of [$doc_type] using [$sim_type] Similarity
+*************************************************************************
++*  SM1-SM2  SIM 1   SIM 2     DOC   S  CATEGORY  TITLE
+==  ======== ======= =======   ====  =  ========= =======================================
+
+EndOfList
+		;
+		
+		if ($doc_type eq "PLANT") {
+				foreach my $key (sort{$b<=>$a} keys %plant_result){
+						print $plant_result{$key};
+				}
+				print "\n\nPLANT correctness using [$sim_type] similarity: " . $plant_correctness . "\n";
+		}
+		elsif ($doc_type eq "PERPLACE") {
+				foreach my $key (sort{$b<=>$a} keys %perplace_result){
+						print $perplace_result{$key};
+				}
+				print "\n\nPERPLACE correctness using [$sim_type] similarity: " . $perplace_correctness . "\n";
+		}
+		else {
+				foreach my $key (sort{$b<=>$a} keys %tank_result){
+						print $tank_result{$key};
+				}
+				print "\n\nTANK correctness using [$sim_type] similarity: " . $tank_correctness . "\n";
+		}
+		
+}
+########################################################
+## COSINE_SIM_A
+## 
+## Computes the cosine similarity for two vectors
+## represented as associate arrays.
+########################################################
+
+sub cosine_sim_a {
+
+    my $vec1 = shift;
+    my $vec2 = shift;
+
+    my $num     = 0;
+    my $sum_sq1 = 0;
+    my $sum_sq2 = 0;
+
+    my @val1 = values %{ $vec1 };
+    my @val2 = values %{ $vec2 };
+
+    # determine shortest length vector. This should speed 
+    # things up if one vector is considerable longer than
+    # the other (i.e. query vector to document vector).
+
+    if ((scalar @val1) > (scalar @val2)) {
+			my $tmp  = $vec1;
+			   $vec1 = $vec2;
+			   $vec2 = $tmp;
+    }
+
+    # calculate the cross product
+
+    my $key = undef;
+    my $val = undef;
+
+    while (($key, $val) = each %{ $vec1 }) {
+		$num += $val * ($$vec2{ $key } || 0);
+    }
+
+    # calculate the sum of squares
+
+    my $term = undef;
+
+    foreach $term (@val1) { $sum_sq1 += $term * $term; }
+    foreach $term (@val2) { $sum_sq2 += $term * $term; }
+
+	# Handle the special case when interactive query return 0 results ...
+    if(($sum_sq1 * $sum_sq2) == 0 and $num == 0) {
+		return 0;
+    }
+    if(($sum_sq1 * $sum_sq2) == 0 and $num != 0) {
+		return 1;
+    }
+    
+    return ( $num / sqrt( $sum_sq1 * $sum_sq2 ));
+}
+
+
+##########################################################
+##  INIT_FILES
+##
+##  This function specifies the names and locations of
+##  input files used by the program. 
+##
+##  Parameter:  $type   ("stemmed" or "unstemmed")
+##
+##  If $type == "stemmed", the filenames are initialized
+##  to the versions stemmed with the Porter stemmer, while
+##  in the default ("unstemmed") case initializes to files
+##  containing raw, unstemmed tokens.
+##########################################################
+
+sub init_files {
+
+    if ("stemmed" eq $token_format) {
+		if ($lcm eq "bag-of-words") { # using the default term set
+				$tank_token_docs .= "\.stemmed";
+				$plant_token_docs .= "\.stemmed";
+				$perplace_token_docs .= "\.stemmed";
+				$tank_corps_freq .= "\.stemmed\.hist";
+				$plant_corps_freq .= "\.stemmed\.hist";
+				$perplace_corps_freq .= "\.stemmed\.hist";
+				$stoplist   .= "\.stemmed";
+		}
+		else {
+				$tank_token_docs .= "\.stemmed\.bigrams";
+				$plant_token_docs .= "\.stemmed\.bigrams";
+				$perplace_token_docs .= "\.stemmed\.bigrams";
+				$tank_corps_freq .= "\.stemmed\.hist\.bigrams";
+				$plant_corps_freq .= "\.stemmed\.hist\.bigrams";
+				$perplace_corps_freq .= "\.stemmed\.hist\.bigrams";
+				$stoplist   .= "\.stemmed";
+		}
+    }
+    else {
+		if ($lcm eq "bag-of-words") { # using the default term set
+				$tank_token_docs .= "\.tokenized";
+				$plant_token_docs .= "\.tokenized";
+				$perplace_token_docs .= "\.tokenized";
+				$tank_corps_freq .= "\.tokenized\.hist";
+				$plant_corps_freq .= "\.tokenized\.hist";
+				$perplace_corps_freq .= "\.tokenized\.hist";
+		}
+		else {
+				$tank_token_docs .= "\.tokenized\.bigrams";
+				$plant_token_docs .= "\.tokenized\.bigrams";
+				$perplace_token_docs .= "\.tokenized\.bigrams";
+				$tank_corps_freq .= "\.tokenized\.hist\.bigrams";
+				$plant_corps_freq .= "\.tokenized\.hist\.bigrams";
+				$perplace_corps_freq .= "\.tokenized\.hist\.bigrams";
+		}
+    }
+}
+
+##########################################################
+##  INIT_CORP_FREQ 
+##
+##  This function reads in corpus and document frequencies from
+##  the provided histogram file for both the document set
+##  and the query set. This information will be used in
+##  term weighting.
+##
+##  It also initializes the arrays representing the stoplist,
+##  title list and relevance of document given query.
+##########################################################
+
+sub init_corp_freq {
+
+    my $tank_corps_freq_fh = new FileHandle $tank_corps_freq, "r" 
+	or croak "Failed $tank_corps_freq";
+	
+	my $plant_corps_freq_fh = new FileHandle $plant_corps_freq, "r" 
+	or croak "Failed $plant_corps_freq";
+	
+	my $perplace_corps_freq_fh = new FileHandle $perplace_corps_freq, "r" 
+	or croak "Failed $perplace_corps_freq";
+
+    my $stoplist_fh   = new FileHandle $stoplist  , "r"
+	or croak "Failed $stoplist";
+
+    my $tank_titles_fh     = new FileHandle $tank_titles    , "r"
+	or croak "Failed $tank_titles";
+	
+	my $plant_titles_fh     = new FileHandle $plant_titles    , "r"
+	or croak "Failed $plant_titles";
+	
+	my $perplace_titles_fh     = new FileHandle $perplace_titles    , "r"
+	or croak "Failed $perplace_titles";
+
+    my $line = undef;
+
+    while (defined( $line = <$stoplist_fh> )) {
+        chomp $line;
+        $stoplist_hash{ $line } = 1;
+    }
+    
+    # init tank freq hash
+    while (defined( $line = <$tank_corps_freq_fh> )) {
+
+        # so on my computer split will return a first element of undef 
+        # if the leading characters are white space, so I eat the white
+        # space to insure that the split works right.
+
+        my ($str) = ($line =~ /^\s*(\S.*)/);
+
+        my ($doc_freq,
+            $cor_freq, 
+            $term    ) = split /\s+/, $str;
+
+        $tank_docs_freq_hash{ $term } = $doc_freq;
+        $tank_corp_freq_hash{ $term } = $cor_freq;
+    }
+    
+    # init plant freq hash
+    while (defined( $line = <$plant_corps_freq_fh> )) {
+
+        # so on my computer split will return a first element of undef 
+        # if the leading characters are white space, so I eat the white
+        # space to insure that the split works right.
+
+        my ($str) = ($line =~ /^\s*(\S.*)/);
+
+        my ($doc_freq,
+            $cor_freq, 
+            $term    ) = split /\s+/, $str;
+
+        $plant_docs_freq_hash{ $term } = $doc_freq;
+        $plant_corp_freq_hash{ $term } = $cor_freq;
+    }
+    
+    # init perplace freq hash
+    while (defined( $line = <$perplace_corps_freq_fh> )) {
+
+        # so on my computer split will return a first element of undef 
+        # if the leading characters are white space, so I eat the white
+        # space to insure that the split works right.
+
+        my ($str) = ($line =~ /^\s*(\S.*)/);
+
+        my ($doc_freq,
+            $cor_freq, 
+            $term    ) = split /\s+/, $str;
+
+        $perplace_docs_freq_hash{ $term } = $doc_freq;
+        $perplace_corp_freq_hash{ $term } = $cor_freq;
+    }
+    
+    push @tank_titles_vector, "";       # push one empty value onto @titles_vector
+                                   # so that indices correspond with title
+                                   # numbers.
+	push @plant_titles_vector, "";       # push one empty value onto @titles_vector
+                                   # so that indices correspond with title
+                                   # numbers.
+	push @perplace_titles_vector, "";       # push one empty value onto @titles_vector
+                                   # so that indices correspond with title
+                                   # numbers.
+	
+	# init the tank title vector
+    while (defined( $line = <$tank_titles_fh> )) {
+
+		chomp $line;
+		push @tank_titles_vector, $line;
+    }
+
+	# init the plant title vector
+    while (defined( $line = <$plant_titles_fh> )) {
+
+		chomp $line;
+		push @plant_titles_vector, $line;
+    }
+    
+    # init the perplace title vector
+    while (defined( $line = <$perplace_titles_fh> )) {
+
+		chomp $line;
+		push @perplace_titles_vector, $line;
+    }
+}
+
+
+##########################################################
+## MAIN_LOOP
+##
+## Parameters: currently no explicit parameters.
+##             performance dictated by user imput.
+## 
+## Initializes document and query vectors using the
+## input files specified in &init_files. Then offers
+## a menu and switch to appropriate functions in an
+## endless loop.
+## 
+## Possible extensions at this level:  prompt the user
+## to specify additional system parameters, such as the
+## similarity function to be used.
+##
+## Currently, the key parameters to the system (stemmed/unstemmed,
+## stoplist/no-stoplist, term weighting functions, vector
+## similarity functions) are hardwired in.
+##
+## Initializing the document vectors is clearly the
+## most time consuming section of the program, as 213334 
+## to 258429 tokens must be processed, weighted and added
+## to dynamically growing vectors.
+## 
+##########################################################
+
+sub main_loop {
+		# call the customized initialization function
+		&init_method;
+		
+		&calc_sim("PERPLACE");
+		&calc_sim("TANK");
+		&calc_sim("PLANT");
+        while (1) {
+		print <<"EndOfMenu";
+
+	============================================================
+	==     Welcome to the 600.466 
+	== Lexical Ambiguity Resolution
+	==
+	== 
+	== Stemming: $token_format
+	== Similarity Algorithm: $sim_type
+	== Position Weighting: $pos_weight
+	== Local Collocation Modelling: $lcm
+	==                  
+	============================================================
+
+	OPTIONS:
+	  1 = TANK
+	  2 = PLANT
+	  3 = PERLACE
+	  4 = Print All
+	  
+	  0 = Quit
+
+	============================================================
+
+EndOfMenu
+		;
+
+		my $option = <STDIN>;
+		chomp $option;
+		if ($option !~ /[0-4]/) {
+				$option = 1;
+		}
+		
+		if($option == 0) {
+				exit 0;
+	    }
+	    elsif ($option == 2) {
+			&show_result("PLANT");
+		}
+		elsif ($option == 3) {
+			&show_result("PERPLACE");
+		}
+		elsif ($option == 4) {
+			&show_result("TANK");
+			&show_result("PLANT");
+			&show_result("PERPLACE");
+		}
+		else {
+			&show_result("TANK");
+		}
+		}
+}
+
+
+##########################################################
+## INIT_METHOD
+##
+## Initialize the method parameters based on the user
+## inputs.
+## 
+##########################################################
+
+sub init_method {
+		while (1) {
+		print <<"EndOfMenu";
+
+	============================================================
+	==     Welcome to the 600.466 
+	== Lexical Ambiguity Resolution
+	==
+	==       Program Initialization
+	==                  
+	============================================================
+
+	OPTIONS:
+	  1 = Use default parameters (Part 1)
+	  2 = Use custom parameters (Part 2)
+	  
+	  3 = Print all permutations (Part 3)
+	  
+	  0 = Quit
+
+	============================================================
+
+EndOfMenu
+		;
+		
+		my $option = <STDIN>;
+		chomp $option;
+		if ($option !~ /[0-3]/) {
+				$option = 1;
+		}
+		
+		# exit program if input is 0
+		if($option == 0) {
+				exit 0;
+	    }
+	    
+	    # init using default parameters
+	    if ($option == 2) {
+				# new menu
+				&set_paras;
+				print "INITIALIZING VECTORS ... \n";
+				&init_files;
+				&init_corp_freq;
+				&init_doc_vectors;
+				&tf_idf;	# use TF IDF weighting
+				&term_norm;	# normalize the term
+				&centroid;	# calculate the centroid Vector profile
+				return;
+		}
+		elsif ($option == 3) {
+				# all permutation
+				&perm_all;
+		}
+		else {	# default
+				print "INITIALIZING VECTORS ... \n";
+				&init_files;
+				&init_corp_freq;
+				&init_doc_vectors;
+				&tf_idf;	# use TF IDF weighting
+				&term_norm;	# normalize the term
+				&centroid;	# calculate the centroid Vector profile
+				return;
+		}
+	}
+}
+
+sub set_paras {
+		while (1) {
+				print <<"EndOfMenu";
+
+	============================================================
+	==     Welcome to the 600.466 
+	== Lexical Ambiguity Resolution
+	==
+	==       Program Initialization
+	==                  
+	============================================================
+
+	OPTIONS:
+	  1 = Modify Stemming
+	  2 = Modify Position Weighting
+	  3 = Modify Local Collocation Modelling
+	  
+	  0 = Finish setup and return to the main menu
+
+	============================================================
+
+EndOfMenu
+				;
+				my $option = <STDIN>;
+				chomp $option;
+				if ($option !~ /[0-3]/) {
+						$option = 0;
+				}
+				
+				
+				if ($option == 1) {
+						print <<"EndOfMenu";
+
+	============================================================
+	==     Welcome to the 600.466 
+	== Lexical Ambiguity Resolution
+	==
+	==            Set Stemming
+	==                  
+	============================================================
+
+	OPTIONS:
+	  1 = Stemmed (default)
+	  2 = Unstemmed
+
+	============================================================
+
+EndOfMenu
+						;
+						$option = <STDIN>;
+						chomp $option;
+						if ($option !~ /[1-2]/) {
+								$option = 1;
+						}
+				
+						# set stemmed
+						if ($option == 2) {
+								$token_format = "unstemmed";
+						}		
+						else {
+								$token_format = "stemmed";
+						}
+				}		
+				elsif ($option == 2) {
+						print <<"EndOfMenu";
+
+	============================================================
+	==     Welcome to the 600.466 
+	== Lexical Ambiguity Resolution
+	==
+	==      Set Position Weighting
+	==                  
+	============================================================
+
+	OPTIONS:
+	  1 = Uniform (default)
+	  2 = Expndecay
+	  3 = Stepped
+	  4 = Customized
+
+	============================================================
+
+EndOfMenu
+						;
+						$option = <STDIN>;
+						chomp $option;
+						if ($option !~ /[1-4]/) {
+								$option = 1;
+						}
+				
+						# set position weight
+						if ($option == 2) {
+								$pos_weight = "expndecay";
+						}
+						elsif ($option == 3) {
+								$pos_weight = "stepped";
+						}
+						elsif ($option == 4) {
+								$pos_weight = "customized";
+						}				
+						else {
+								 $pos_weight = "uniform";
+						}
+				}
+				elsif ($option == 3) {
+						print <<"EndOfMenu";
+
+	============================================================
+	==     Welcome to the 600.466 
+	== Lexical Ambiguity Resolution
+	==
+	==Set Local Collocation Modelling
+	==                  
+	============================================================
+
+	OPTIONS:
+	  1 = Bag-of-Words (default)
+	  2 = Adjacent-Separate-LR
+
+	============================================================
+
+EndOfMenu
+						;
+						$option = <STDIN>;
+						chomp $option;
+						if ($option !~ /[1-2]/) {
+								$option = 1;
+						}
+				
+						# set stemmed
+						if ($option == 2) {
+								$lcm = "LR";
+								system ("perl", "$DIR/gen_bigrams.prl") and die "Failed $DIR/gen_bigrams.prl: $!\n";
+						}		
+						else {
+								$lcm = "bag-of-words";
+						}
+				}
+				else {
+						# exit program if input is 0
+						return;
+				}		
+		}
+}
+
+
+########################################################
+##  CLEANUP
+##  
+##  This function is just used to re-init the variables
+########################################################
+
+sub cleanup {
+		# clean up and reset all the variables
+		$tank_token_docs = "$DIR/tank";           # tokenized tank documents
+		$tank_corps_freq = "$DIR/tank";           # frequency of each token in the tank documents.
+		$tank_titles     = "$DIR/tank.titles";   # titles of each article in tank
+		$plant_token_docs = "$DIR/plant";           # tokenized plant documents
+		$plant_corps_freq = "$DIR/plant";           # frequency of each token in the plant documents.
+		$plant_titles     = "$DIR/plant.titles";   # titles of each article in plant
+		$perplace_token_docs = "$DIR/perplace";           # tokenized perplace documents
+		$perplace_corps_freq = "$DIR/perplace";           # frequency of each token in the perplace documents.
+		$perplace_titles = "$DIR/perplace.titles";   # titles of each article in perplace
+		$stoplist   = "$DIR/common_words";   # common uninteresting words
+		@tank_doc_vector = ( );
+		@plant_doc_vector = ( );
+		@perplace_doc_vector = ( );
+		%tank_docs_freq_hash = ( );    
+		%plant_docs_freq_hash = ( );    
+		%perplace_docs_freq_hash = ( );    
+		%tank_corp_freq_hash = ( );
+		%plant_corp_freq_hash = ( );
+		%perplace_corp_freq_hash = ( );
+		%stoplist_hash  = ( );
+		@tank_titles_vector  = ( );
+		@plant_titles_vector  = ( );
+		@perplace_titles_vector  = ( );
+		$tank_doc_num =  0;
+		$plant_doc_num =  0;
+		$perplace_doc_num =  0;
+		@tank_sensenum = ( );                                        
+		@plant_sensenum = ( );         
+		@perplace_sensenum = ( );         
+		%tank_vp1 = ( );         
+		%tank_vp2 = ( ); 
+		%plant_vp1 = ( );         
+		%plant_vp2 = ( );          
+		%perplace_vp1 = ( );         
+		%perplace_vp2 = ( );          
+		%tank_vp_1 = ( );         
+		%tank_vp_2 = ( ); 
+		%plant_vp_1 = ( );         
+		%plant_vp_2 = ( );          
+		%perplace_vp_1 = ( );         
+		%perplace_vp_2 = ( );          
+		$tank_total_correct = undef;
+		$tank_total_incorrect = undef;
+		$plant_total_correct = undef;
+		$plant_total_incorrect = undef;
+		$perplace_total_correct = undef;
+		$perplace_total_incorrect = undef;
+		$tank_correctness = undef;
+		$plant_correctness = undef;
+		$perplace_correctness = undef;
+		%tank_result = ( );
+		%plant_result = ( );
+		%perplace_result = ( );
+		$token_format = "stemmed";
+		$sim_type = "cosine";
+		$pos_weight = "uniform";
+		$lcm = "bag-of-words";
+}
+
+
+##########################################################
+## PERM_ALL
+##
+## Print all the permutations as per requested in Part 3
+## 
+##########################################################
+
+sub perm_all {
+		print "INITIALIZING VECTORS AND CALCULATING THE SIMILARITY... \n";
+		# TODO print all the permutations
+		print <<"EndOfMenu";
+
+   \tStemming \tPos Weight\tModelling   \ttank  \tplant \tper/place
+===\t=========\t==========\t============\t======\t======\t=========
+EndOfMenu
+		;
+
+		
+		#################
+		##  line 1 of the table   ##
+		#################
+		$token_format = "unstemmed";
+		$pos_weight = "uniform";
+		$lcm = "bag-of-words";
+		
+		# init the program
+		&init_files;
+		&init_corp_freq;
+		&init_doc_vectors;
+		&tf_idf;	# use TF IDF weighting
+		&term_norm;	# normalize the term
+		&centroid;	# calculate the centroid Vector profile
+		&init_files;
+		
+		# calculate the similarity
+		&calc_sim("PERPLACE");
+		&calc_sim("TANK");
+		&calc_sim("PLANT");
+		
+		# print the result
+		print " 1 \t$token_format\t$pos_weight   \t$lcm\t$tank_correctness\t$plant_correctness\t$perplace_correctness\n";
+		&cleanup;	# before start line 2, we restore all the variables to default value
+		
+		
+		
+		#################
+		##  line 2 of the table   ##
+		#################
+		$token_format = "stemmed";
+		$pos_weight = "expndecay";
+		$lcm = "bag-of-words";
+		# $lcm = "LR";
+		
+		# init the program
+		&init_files;
+		&init_corp_freq;
+		&init_doc_vectors;
+		&tf_idf;	# use TF IDF weighting
+		&term_norm;	# normalize the term
+		&centroid;	# calculate the centroid Vector profile
+		&init_files;
+		
+		# calculate the similarity
+		&calc_sim("PERPLACE");
+		&calc_sim("TANK");
+		&calc_sim("PLANT");
+		
+		# print the result
+		print " 2 \t$token_format  \t$pos_weight \t$lcm\t$tank_correctness\t$plant_correctness\t$perplace_correctness\n";
+		&cleanup;	# before start next line, we restore all the variables to default value
+		
+		
+		
+		#################
+		##  line 3 of the table   ##
+		#################
+		$token_format = "unstemmed";
+		$pos_weight = "expndecay";
+		$lcm = "bag-of-words";
+		
+		# init the program
+		&init_files;
+		&init_corp_freq;
+		&init_doc_vectors;
+		&tf_idf;	# use TF IDF weighting
+		&term_norm;	# normalize the term
+		&centroid;	# calculate the centroid Vector profile
+		&init_files;
+		
+		# calculate the similarity
+		&calc_sim("PERPLACE");
+		&calc_sim("TANK");
+		&calc_sim("PLANT");
+		
+		# print the result
+		print " 3 \t$token_format\t$pos_weight \t$lcm\t$tank_correctness\t$plant_correctness\t$perplace_correctness\n";
+		&cleanup;	# before start next line, we restore all the variables to default value
+		
+		
+		
+		#################
+		##  line 4 of the table   ##
+		#################
+		$token_format = "unstemmed";
+		$pos_weight = "expndecay";
+		$lcm = "LR";
+		
+		# init the program
+		&init_files;
+		&init_corp_freq;
+		&init_doc_vectors;
+		&tf_idf;	# use TF IDF weighting
+		&term_norm;	# normalize the term
+		&centroid;	# calculate the centroid Vector profile
+		&init_files;
+		
+		# calculate the similarity
+		&calc_sim("PERPLACE");
+		&calc_sim("TANK");
+		&calc_sim("PLANT");
+		
+		# print the result
+		print " 4 \t$token_format\t$pos_weight \t$lcm          \t$tank_correctness\t$plant_correctness\t$perplace_correctness\n";
+		&cleanup;	# before start next line, we restore all the variables to default value
+		
+		
+		
+		#################
+		##  line 5 of the table   ##
+		#################
+		$token_format = "unstemmed";
+		$pos_weight = "stepped";
+		$lcm = "LR";
+		
+		# init the program
+		&init_files;
+		&init_corp_freq;
+		&init_doc_vectors;
+		&tf_idf;	# use TF IDF weighting
+		&term_norm;	# normalize the term
+		&centroid;	# calculate the centroid Vector profile
+		&init_files;
+		
+		# calculate the similarity
+		&calc_sim("PERPLACE");
+		&calc_sim("TANK");
+		&calc_sim("PLANT");
+		
+		# print the result
+		print " 5 \t$token_format\t$pos_weight   \t$lcm          \t$tank_correctness\t$plant_correctness\t$perplace_correctness\n";
+		&cleanup;	# before start next line, we restore all the variables to default value
+		
+		
+		
+		#################
+		##  line 6 of the table   ##
+		#################
+		$token_format = "unstemmed";
+		$pos_weight = "customized";
+		$lcm = "LR";
+		
+		# init the program
+		&init_files;
+		&init_corp_freq;
+		&init_doc_vectors;
+		&tf_idf;	# use TF IDF weighting
+		&term_norm;	# normalize the term
+		&centroid;	# calculate the centroid Vector profile
+		&init_files;
+		
+		# calculate the similarity
+		&calc_sim("PERPLACE");
+		&calc_sim("TANK");
+		&calc_sim("PLANT");
+		
+		# print the result
+		print " 6 \t$token_format\t$pos_weight\t$lcm          \t$tank_correctness\t$plant_correctness\t$perplace_correctness\n";
+		&cleanup;	# before start next line, we restore all the variables to default value
+		
+		
+		# # init the program as default again so we can enter the program normally
+		# &init_files;
+		# &init_corp_freq;
+		# &init_doc_vectors;
+		# &tf_idf;	# use TF IDF weighting
+		# &term_norm;	# normalize the term
+		# &centroid;	# calculate the centroid Vector profile
+		# &init_files;
+		
+}

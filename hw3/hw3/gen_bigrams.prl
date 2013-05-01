@@ -1,0 +1,190 @@
+#!/usr/local/bin/perl
+
+###########################################################
+## This perl script is used to generate all the bigrams
+## within the .stemmed files and .tokenized files (except
+## the files for interactive queries which will be generated
+## dynamically each time a use make inputs.
+## 
+## @INPUT			@OUTPUT
+## perplace.stemmed		>	perplace.stemmed.bigrams
+## perplace.stemmed.hist	>	perplace.stemmed.hist.bigrams
+## perplace.tokenized	>	perplace.tokenized.bigrams
+## perplace.tokenized.hist	>	perplace.tokenized.hist.bigrams
+## plant.stemmed	>	plant.stemmed.bigrams
+## plant.stemmed.hist	>	plant.stemmed.hist.bigrams
+## plant.tokenized	>	plant.tokenized.bigrams
+## plant.tokenized.hist	>	plant.tokenized.hist.bigrams
+## tank.stemmed	>	tank.stemmed.bigrams
+## tank.stemmed.hist	>	tank.stemmed.hist.bigrams
+## tank.tokenized	>	tank.tokenized.bigrams
+## tank.tokenized.hist	>	tank.tokenized.hist.bigrams
+## 
+##########################################################
+
+use Carp;
+use FileHandle;
+
+my $DIR = "../hw3";
+
+# Initialize the stopword list for both stemmed and tokenlized
+my $stoplist   = "$DIR/common_words";
+my $stoplist_stemmed   = "$DIR/common_words\.stemmed";
+my %stoplist_hash = ();
+my %stoplist_stemmed_hash = ();
+
+# Initialize the tokenlized stopword list
+my $stoplist_fh   = new FileHandle $stoplist  , "r"
+	or croak "Failed [stoplist_fh] $stoplist";
+	
+while (defined( $line = <$stoplist_fh> )) {
+	chomp $line;
+	$stoplist_hash{ $line } = 1;
+}
+
+# Initialize the stemmed stopword list
+my $stoplist_stemmed_fh   = new FileHandle $stoplist_stemmed  , "r"
+	or croak "Failed [stoplist_fh] $stoplist_stemmed";
+	
+while (defined( $line = <$stoplist_stemmed_fh> )) {
+	chomp $line;
+	$stoplist_stemmed_hash{ $line } = 1;
+}
+
+
+&gen_bigrams("perplace");
+&gen_bigrams("plant");
+&gen_bigrams("tank");
+
+exit(0);
+
+
+###########################################################
+## GEN_BIGRAMS
+## 
+## This function will generate the bigrams term sets
+##########################################################
+sub gen_bigrams {
+	
+	my $file_name =	shift;
+	
+	# array to store all the bigrams as value
+	my @bigrams = ();
+	my $last_word = undef;	# used to store the last word so we could have pairs
+	
+	# my $file_name      = "interactive";
+	my $raw_file       = "$file_name\.raw";
+	my $stemmed_file   = "$file_name\.stemmed";
+	my $tokened_file   = "$file_name\.tokenized";
+	my $stem_hist_file = "$file_name\.stemmed\.hist";
+	my $tokn_hist_file = "$file_name\.tokenized\.hist";
+	my $stem_hist_com = "cat $stemmed_file\.bigrams | perl $DIR/make_hist.prl > $stem_hist_file\.bigrams";
+	my $tokn_hist_com = "cat $tokened_file\.bigrams | perl $DIR/make_hist.prl > $tokn_hist_file\.bigrams";
+	
+	my $tokened_file_fh = new FileHandle $tokened_file, "r"
+		or croak "Failed $tokened_file";
+		
+	my $stemmed_file_fh = new FileHandle $stemmed_file, "r"
+		or croak "Failed $stemmed_file";
+	
+	
+	#########
+	# make the stemmed bigrams
+	#########	
+	open(RAWFILE, ">$stemmed_file\.bigrams");
+	
+	while (defined( $word = <$stemmed_file_fh> )) {
+		chomp $word;
+		
+		# if we encounter a normal word, we check if it eligible for bigram
+		if ($last_word =~ /[a-zA-Z]/ and $word =~ /[a-zA-Z]/) {   # start of query tokens
+		  # if both words are not in the stoplist, we added to the bigrams array
+		  if (! exists $stoplist_stemmed_hash{ $last_word } and ! exists $stoplist_stemmed_hash{ $word }) {
+				if ($last_word =~ /^\.X-/ or $word =~ /^\.X-/) {
+						push (@bigrams, "$last_word+$word");
+				}
+		  }  
+		}
+		
+		# if next doc/query, pop all the elements in the array into file
+		if ($word =~ /^\.I/ and $#bigrams != -1) {
+			# after we scanned each doc/qry, all the bigrams are in the array now
+			# we append all the bigrams to the end of doc/qry
+			foreach $bigram (@bigrams) {
+				print RAWFILE "$bigram\n";
+			}
+			# clean up the array
+			@bigrams = ();
+		}
+		
+		# we shift last_word by 1 and write the current word into the output file
+		$last_word = $word;
+		print RAWFILE "$word\n";
+	}
+	
+	# do it once again to make sure we have everything write into the file
+	if ($#bigrams != -1) {
+		foreach $bigram (@bigrams) {
+			print RAWFILE "$bigram\n";
+		}
+	}
+	
+	# close the bigram file after we created it
+	close(RAWFILE);
+
+	# generate hist file
+	system ("$stem_hist_com") and die "Failed $DIR/make_hist.prl: $!\n";
+	
+	# clean up the array
+	@bigrams = ();
+	
+	#########
+	# make the tokenlized bigrams
+	#########	
+	open(RAWFILE, ">$tokened_file\.bigrams");
+	
+	while (defined( $word = <$tokened_file_fh> )) {
+		chomp $word;
+		
+		# if we encounter a normal word, we check if it eligible for bigram
+		if ($last_word =~ /[a-zA-Z]/ and $word =~ /[a-zA-Z]/) {   # start of query tokens
+		  # if both words are not in the stoplist, we added to the bigrams array
+		  if (! exists $stoplist_hash{ $last_word } and ! exists $stoplist_hash{ $word }) {
+			  if ($last_word =~ /^\.X-/ or $word =~ /^\.X-/) {
+					push (@bigrams, "$last_word+$word");
+			  }
+		  }  
+		}
+		
+		# if next doc/query, pop all the elements in the array into file
+		if ($word =~ /^\.I/ and $#bigrams != -1) {
+			# after we scanned each doc/qry, all the bigrams are in the array now
+			# we append all the bigrams to the end of doc/qry
+			foreach $bigram (@bigrams) {
+				print RAWFILE "$bigram\n";
+			}
+			# clean up the array
+			@bigrams = ();
+		}
+		
+		# we shift last_word by 1 and write the current word into the output file
+		$last_word = $word;
+		print RAWFILE "$word\n";
+	}
+	
+	# do it once again to make sure we have everything write into the file
+	if ($#bigrams != -1) {
+		foreach $bigram (@bigrams) {
+			print RAWFILE "$bigram\n";
+		}
+	}
+	
+	# close the bigram file after we created it
+	close(RAWFILE);
+
+	# generate hist file
+	system ("$tokn_hist_com") and die "Failed $DIR/make_hist.prl: $!\n";
+	
+	# clean up the array
+	@bigrams = ();
+}

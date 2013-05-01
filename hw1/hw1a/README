@@ -1,0 +1,35 @@
+# Information Retrival HW1
+# Chang Liu cliu70
+# chang.liu@jhu.edu
+
+
+SECTION A
+"""
+0.  Folder [classes] is the included both self-added class and the original classes comes with the homeword.
+
+1.  I added a class named [thethatthen] that for special NEOS cases under the folder [classes] (classes\thethatthen).
+
+2.  I actually have 2 files for Section A that used different methods to solve the problem:
+    in [section1.prl] I hand crafted 20 rules which evaluates the training data at 99.88%;
+    in [section1_weka_PART.prl] I used weka and PART classifier to generate 7 rules which evaluates the training data at 99.64%;
+    I am not sure which way is the better way to solve the section A, so I just made 2 versions.
+    You may want to run both of the scripts on the test data to check which one will perform better ...
+    
+3.  To run the perl script, you may want to modify the class folder path at line 13 in file [section1.prl] and/or [section1_weka_PART.prl] : $L="classes";
+
+4.  Use command 'section1.prl < sent.data.train | more' and/or 'section1_weka_PART.prl < sent.data.train | more' to run the scripts.
+
+5.  [section1.prl]: after running it, it will generate 2 files: [section1_prl_result.txt] has all the output and performance of the script. [invalid_rule.txt] has all the unmatched sentences.
+    [section1_weka_PART.prl]: after running it, it will generate 2 files: [section1_weka_PART_result.txt] has all the output and performance of the script. [invalid_rule_weka_PART.txt] has all the unmatched sentences.
+
+6.  [section1_weka_generator.prl] is used to generate the weka .arff file [sentence.arff]. (Use: 'section1_weka_generator.prl < sent.data.train | more')
+
+7.  [sentence.arff] is the .arff file that used for constructing the weka version of my answer: [section1_weka_PART.prl]
+
+8.  [sent.data.train] is the training data file
+
+9.  \results folder has the final results of my 2 scripts' performance on the training data.
+
+10.  \other folder has my [section1_weka_JRip.prl] which is weka with JRip classifier. It has a bad performance so I didn't use it. I just attached it for your reference.
+"""
+

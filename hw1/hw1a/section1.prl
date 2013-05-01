@@ -1,0 +1,144 @@
+#!/usr/local/bin/perl
+
+##########################################################
+##  END-OF-SENTENCE CLASSIFIER
+##  Chang Liu, chang.liu@jhu.edu
+##
+##  Use:
+##  section1.prl < sent.data.train | more
+##
+##  Score on training data: 0.998790159967738
+##  Suggestion: run in a wide window
+##########################################################
+
+
+$L="classes";
+
+&initialize_set(*abbrevs,"$L/abbrevs"); 
+&initialize_set(*titles,"$L/titles"); 
+&initialize_set(*unlikely_proper_nouns,"$L/unlikely_proper_nouns"); 
+&initialize_set(*timeterms,"$L/timeterms"); 
+&initialize_set(*thethatthen,"$L/thethatthen"); 
+
+open(OUTFILE, ">invalid_rule.txt");
+open(RESULT, ">section1_prl_result.txt");
+
+while (<>) {
+   @words = split(' ',$_);
+   ($class,$id,$L3,$L2,$L1,$C,$R1,$R2,$R3,$Llength,$Rlength,$Nspaces) = @words;
+ 
+   if    ($R1 =~ /^[a-z]/) { &ret(1,$class,$id,'NEOS');} # +1 is lower case
+   elsif ($L1 =~ /[a-zA-Z]([\.][a-zA-Z])+/) { &ret(2,$class,$id,'NEOS');} # L1 is likely to be abbreves like U.S, A.M, etc
+   elsif ($R1 eq "<P>")    { &ret(3,$class,$id,'EOS');}  # +1 is new paragraph
+   elsif ($R1 =~ /^[,\.]/)  { &ret(4,$class,$id,'NEOS');} # +1 is comma, period
+   elsif ($R1 =~ /^[A-Z]/) {                            
+      if ($L1 =~ /^[A-Za-z]$/) { 
+        if ($L2 =~ /^[.]$/ and $L3 =~ /^[A-Z]$/) {&ret(5,$class,$id,'NEOS');} # If L3 is a single Cap char, and L2 is [.] , L1 is a single char, R1 start with Cap, then NEOS (ex: S . W . A . T)  
+        elsif (&classmember($R1,thethatthen)) {&ret(6,$class,$id,'EOS');} # If L1 is single char, R2 is like The, Then, etc. Must be EOS
+        elsif ($L2 =~ /^[A-Z]/) {&ret(7,$class,$id,'NEOS');}# If L2 start with Cap, L1 is a single char, middle name
+      }
+      elsif (&classmember($R1,thethatthen)) {&ret(8,$class,$id,'EOS');} # R1 is in The That Then, etc. , New sentence follow
+      elsif (&classmember($L1,titles))   { &ret(9,$class,$id,'NEOS');}  # L1 being title, Mr. Mrs.
+      elsif ($L2 =~ /^[(]/) {
+        &ret(10,$class,$id,'NEOS'); # L2 being ( is not likely to be EOS
+      }
+      else { &ret(11,$class,$id,'EOS');}   # default case
+   }
+   elsif ($R1 =~ /^[;]/) { &ret(12,$class,$id,'NEOS');} # +1 follow is ;, period
+   elsif ($L1 =~ /^[(]/ || $L2 =~ /^[(]/ || $L3 =~ /^[(]/ || $R1 =~ /^[&]/) {
+    &ret(13,$class,$id,'NEOS'); # Incomplete sentence
+   }
+   elsif ($R1 =~ /^[``]/)  { &ret(14,$class,$id,'EOS');} # Begin quote, so . likely to be EOS
+   elsif ($L2 =~ /^[.]$/ and $L3 =~ /^[A-Z]$/) {&ret(15,$class,$id,'NEOS');} # If L3 is a single Cap char, and L2 is [.] , L1 is a single char, then NEOS (ex: S . W . A . T)  
+   elsif ($L1 =~ /^[a-z]$/) {
+    &ret(16,$class,$id,'NEOS'); # if L1 is a single char, abbrevations
+   }
+   elsif (&classmember($L1,abbrevs))   { &ret(17,$class,$id,'NEOS');}  # mr, apt, abbrevs
+   elsif (($L1 =~ /^[O]/ && $L2 =~ /^[&]/ && $L3 =~ /^[.]/ && $R1 =~ /^[-]/) || ($L1 =~ /[*]/ || $L2 =~ /[*]/ || $L3 =~ /[*]/)) {
+    &ret(18,$class,$id,'NEOS'); # Special pattern which has no idea what it is, seems to be some calculations
+   }
+   elsif ($L1 =~ /[FP]/ && $R1 =~ /^[0-9]+/) {
+    &ret(19,$class,$id,'NEOS'); # Figure, Page number, (Page . 165)
+   }
+   else                     { 
+    &ret(0,$class,$id,'EOS');  # +1 is number, etc. 
+   }
+}
+
+
+# print "Your score is: ", $correct/($correct+$incorrect), "\n";
+print RESULT ("\n\n\nYour score is: ", $correct/($correct+$incorrect), "\n\n");
+
+# Output the correctness to the file section1_prl_result.txt
+for ($i=0;$i<20;$i++) {
+  my $totalu = $rule_utilization{"rule_$i" . "_correct"} + $rule_utilization{"rule_$i" . "_incorrect"};
+  print RESULT ("Rule $i" . " total utilization: ", $totalu . " = " . ($totalu * 100 / ($correct + $incorrect)) . "%      ");
+  print RESULT ("Correct: " . ($rule_utilization{"rule_$i" . "_correct"} + 0) . " = " . ($rule_utilization{"rule_$i" . "_correct"} * 100 / $totalu) . "%      ");
+  print RESULT ("Incorrect: " . ($rule_utilization{"rule_$i" . "_incorrect"} + 0) . " = " . ($rule_utilization{"rule_$i" . "_incorrect"} * 100 / $totalu) . "%\n");
+}
+
+print RESULT ("\n");
+print RESULT ("### HW1A cliu70 - OVERALL CORRECT: " . $correct . " = " . $correct*100/($correct+$incorrect) . "%  INCORRECT: " . $incorrect . " = " . $incorrect*100/($correct+$incorrect) . "%.");
+
+close(OUTFILE);
+close(RESULT); 
+
+print "Done! Please check section1_prl_result.txt for output and result.\n";
+ 
+##########################################################
+## RET - prints full line for errors and keeps score
+##     - $where indicates the rule number responsible for the classification
+##
+##  This is a useful debugging tool, as after each change in
+##  the program one can identify the remaining misclassified
+##  training examples and the patterns responsible for them. 
+##########################################################
+ 
+sub ret {
+   local($where,$trueclass,$id,$givenclass) = @_;
+   
+   if ($trueclass eq $givenclass) {
+      # print ".. (at ",$where,") -  ", $_;
+      print RESULT (".. (at ",$where,") -  ", $_);
+      $correct++; 
+      $rule_utilization{"rule_$where" . "_correct"}++;
+   }
+   else {
+      # print "XX (at ",$where,") -  ", $_;
+      print RESULT ("XX (at ",$where,") -  ", $_);
+      print OUTFILE ("XX (at ",$where," shoud be ", $trueclass , ") -  ", $_);
+      $incorrect++;
+      $rule_utilization{"rule_$where" . "_incorrect"}++;
+   }
+   next;
+}
+
+##########################################################
+## CLASSMEMBER - tests for membership of $key in a given set
+##
+##  The \L in $set{"\L$key"} is a perl hack to convert a
+##  string into all lower case for lookup in a word array
+##  insensitive to the capitalization of the original key.
+##########################################################
+
+sub classmember{
+   local($key,*set) = @_;
+
+   return $set{"\L$key"};
+}
+
+##########################################################
+## INITIALIZE_SET - loads named associative array with set members   
+##########################################################
+
+sub initialize_set{
+   local(*set,$where) = @_;
+   
+    open (FILE,$where) || die "Can't open file $where: $!\n";
+
+    while (<FILE>) {
+        chop;
+        $set{$_} = 1;
+    }
+    close (FILE);
+}

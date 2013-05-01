@@ -1,0 +1,208 @@
+XX ( 5) TABLE	ADDRESS	                    Tel: (217) 244-5582; FAX: (217) 244-8371
+XX ( 5) TABLE	ADDRESS	                    Email: jjones@director.beckman.uiuc.edu
+XX ( 5) TABLE	PTEXT	You've heard whispers.  You've heard rumors.
+XX ( 5) TABLE	PTEXT	Well ... they're true!  There actually is going to be a GSB this week:
+XX ( 7) SIG	GRAPHIC	-------------------------------------------------------------------------
+XX ( 8) GRAPHIC	HEADL	           1993-94 IBM Postdoctoral Fellowship in Mathematical Sciences
+XX ( 8) GRAPHIC	HEADL	           ------------------------------------------------------------
+XX ( 8) GRAPHIC	PTEXT	To apply, please submit the following by JANUARY 15, 1993:  
+XX ( 8) GRAPHIC	PTEXT	                                         ----------------
+XX ( 8) GRAPHIC	HEADL	                      *** Faculty Positions, Fall 1993 ***
+XX ( 8) GRAPHIC	HEADL	                           Computer Science Department
+XX ( 8) GRAPHIC	HEADL	                            COLORADO STATE UNIVERSITY
+XX ( 8) GRAPHIC	HEADL	                            *************************
+XX ( 8) GRAPHIC	HEADL		  A N O U N C I N G   A   T H U R S D A Y   G S B
+XX ( 8) GRAPHIC	HEADL		  -----------------------------------------------
+XX ( 4) HEADL	GRAPHIC		PPPPPPP    IIIIIIII   ZZZZZZZZ   ZZZZZZZZ      AAAA         !!     
+XX ( 4) HEADL	GRAPHIC		PP     PP     II            ZZ         ZZ    AA    AA  	  !!!!!!   
+XX ( 4) HEADL	GRAPHIC		PP     PP     II           ZZ         ZZ     AA    AA  	  !!!!!!   
+XX ( 4) HEADL	GRAPHIC		PPPPPPP       II         ZZ         ZZ       AAAAAAAA  	   !!!!    
+XX ( 4) HEADL	GRAPHIC		PP            II       ZZ         ZZ         AA    AA  	    !!     
+XX ( 4) HEADL	GRAPHIC		PP            II      ZZ         ZZ          AA    AA  	           
+XX ( 4) HEADL	GRAPHIC		PP         IIIIIIII   ZZZZZZZZ   ZZZZZZZZ    AA    AA 	    !!
+XX ( 7) SIG	GRAPHIC	--------------------------------------------------------------------------
+XX ( 7) SIG	GRAPHIC	--------------------------------------------------------------------------
+XX ( 8) GRAPHIC	HEADL	CSE 110, FINAL EXAM RESULTS
+XX ( 8) GRAPHIC	HEADL	=============================
+XX ( 0) PTEXT	HEADL	HISTOGRAM:
+XX ( 5) TABLE	GRAPHIC	   20.00 |
+XX ( 5) TABLE	GRAPHIC	   25.00 |*
+XX ( 5) TABLE	GRAPHIC	   30.00 |*
+XX ( 5) TABLE	GRAPHIC	   35.00 |
+XX ( 5) TABLE	GRAPHIC	   40.00 |**
+XX ( 5) TABLE	GRAPHIC	   45.00 |*
+XX ( 5) TABLE	GRAPHIC	   50.00 |*
+XX ( 5) TABLE	GRAPHIC	   55.00 |
+XX ( 5) TABLE	GRAPHIC	   60.00 |****
+XX ( 5) TABLE	GRAPHIC	   65.00 |*
+XX ( 5) TABLE	GRAPHIC	   70.00 |******
+XX ( 5) TABLE	GRAPHIC	   75.00 |******
+XX ( 5) TABLE	GRAPHIC	   80.00 |****************
+XX ( 5) TABLE	GRAPHIC	   85.00 |*********************
+XX ( 5) TABLE	GRAPHIC	   90.00 |**************
+XX ( 5) TABLE	GRAPHIC	   95.00 |*************************
+XX ( 5) TABLE	GRAPHIC	  100.00 |**********
+XX ( 5) TABLE	PTEXT		Here is a list of the grades we've accumulated so far.  Take a
+XX ( 5) TABLE	PTEXT	   look and make sure everything agrees with what you expect.
+XX ( 4) HEADL	PTEXT			Matthew
+XX ( 0) PTEXT	ITEM	Hmm...if only I can remember all of the things I have wanted to ask...
+XX ( 0) PTEXT	ITEM	Anyhow....One more thing..I flew on a new Taiwanese carrier called EVA
+XX ( 0) PTEXT	ITEM	Airways last summer...in their Economy Deluxe class, and thought it was
+XX ( 0) PTEXT	ITEM	the most excellent...Has anyone else flew on them? What do you think? and
+XX ( 0) PTEXT	ITEM	is their service similar to that of Virgin Atlantic's?
+XX ( 5) TABLE	PTEXT	But EVA lacks of experiences.  They still need time to mature.
+XX ( 0) PTEXT	SIG	Scotty 
+XX ( 0) PTEXT	SIG	--
+XX ( 0) PTEXT	SIG	=================================================================
+XX ( 0) PTEXT	SIG	Steve Howie				Email:	showie@uoguelph.ca
+XX ( 0) PTEXT	SIG	NetNews and Gopher Admin.  		Phone:	(519) 824-4120 x2556
+XX ( 0) PTEXT	SIG	Computing and Communications Svcs.	Fax:	(519) 763-6143 
+XX ( 0) PTEXT	SIG	University of Guelph
+XX ( 8) GRAPHIC	PTEXT	If it's not Scottish its CRRRRRAAAAAAAAAAAAAAPPPPP
+XX ( 8) GRAPHIC	PTEXT	=================================================================
+XX ( 5) TABLE	PTEXT	You mean December 1994?  I'd like to hear your guesstimates, spill the beans!
+XX ( 7) SIG	PTEXT	RNA
+XX ( 5) TABLE	PTEXT	DCA  National Airport   New North Terminal Building (three piers)
+XX ( 5) TABLE	PTEXT	                          designed by Ceasar Pelli
+XX ( 5) TABLE	PTEXT	                        New control tower
+XX ( 5) TABLE	PTEXT	                        Separated arrivals/departure levels
+XX ( 5) TABLE	PTEXT	                        Moving sidewalk connection to Metro Station
+XX ( 5) TABLE	PTEXT	                        New Parking facilities
+XX ( 5) TABLE	PTEXT	                        USAir in temporary terminal (was a hangar)
+XX ( 5) TABLE	PTEXT	                        Main Terminal preserved as landmark
+XX ( 4) HEADL	PTEXT	EWR  Newark/NYC         New International Arrivals facility on top
+XX ( 4) HEADL	PTEXT	                          of Terminal B
+XX ( 4) HEADL	PTEXT	                        New monorail for Terminals A,B,C & long term lots
+XX ( 4) HEADL	PTEXT	                        (Proposed Northeast Corridor train station)
+XX ( 7) SIG	PTEXT	-sandeep
+XX ( 4) HEADL	PTEXT		Michael.
+XX ( 0) PTEXT	HEADL	WHY SHUTTLE HAD TO BE TRIED
+XX ( 0) PTEXT	ITEM	1) California was Strategicaly Important to UA
+XX ( 0) PTEXT	ITEM	2) California has good densities.
+XX ( 0) PTEXT	HEADL	TO MAKE SURE THAT SHUTTLE WOULD WORK...
+XX ( 0) PTEXT	HEADL	WHAT THEY COULD HAVE DONE BETTER
+XX ( 0) PTEXT	HEADL	RECENT DEVELOPMENTS
+XX ( 8) GRAPHIC	TABLE	       |                           | /*   737    \                 |          |
+XX ( 8) GRAPHIC	TABLE	       |300 310 319 320 321 330 340|345 600 700 800 744 757 767 777|80  90  11|
+XX ( 8) GRAPHIC	TABLE	_______|___________________________|_______________________________|__________|
+XX ( 8) GRAPHIC	TABLE	3Q     |                           |                         3R    |          |
+XX ( 8) GRAPHIC	TABLE	AI     |                           |                 2P            |          |
+XX ( 8) GRAPHIC	TABLE	Bavaria|                           |         2                     |          |
+XX ( 8) GRAPHIC	TABLE	NH     |                10U        |                         3G  3P|          |
+XX ( 8) GRAPHIC	TABLE	BG     |     2P                    |                               |          |
+XX ( 8) GRAPHIC	TABLE	IY     |     2U                    |                               |          |
+XX ( 8) GRAPHIC	TABLE	LH     |        20C                |                               |          |
+XX ( 8) GRAPHIC	TABLE	ML     |             4I            |                               |          |
+XX ( 8) GRAPHIC	TABLE	SK     |                           |    35                         |          |
+XX ( 8) GRAPHIC	TABLE	JL     |                           | 4                             |          |
+XX ( 8) GRAPHIC	TABLE	GMI    |                           |        12                     |          |
+XX ( 8) GRAPHIC	TABLE	LTU    |                           |                     1R  1P    |          |
+XX ( 8) GRAPHIC	TABLE	_______|___________________________|_______________________________|__________|
+XX ( 8) GRAPHIC	TABLE	Total  | 0   4  20   4  10   0   0 | 4  35  14   0   2   1   7   3 | 0   0   0|
+XX ( 8) GRAPHIC	TABLE	  95   |    A I R B U S ( 3 8 )    |     B O E I N G ( 6 6 )       | M D ( 0 )|
+XX ( 2) NNHEAD	PTEXT	Note: Air France's cancellation is not official.
+XX ( 7) SIG	PTEXT	AND
+XX ( 0) PTEXT	SIG	Al.
+XX ( 5) TABLE	PTEXT	good point.  The airlines above don't have to worry about this.
+XX ( 0) PTEXT	TABLE	    Cessna 208		216
+XX ( 0) PTEXT	TABLE	    Fokker F27		 32
+XX ( 0) PTEXT	TABLE	    Boeing 727		158
+XX ( 0) PTEXT	TABLE	    Airbus A310		  7	(plus 10 on order)
+XX ( 0) PTEXT	TABLE	    Airbus A300-600	  7	(plus 19 on order)
+XX ( 0) PTEXT	TABLE	    MacDAC DC-10	 35
+XX ( 0) PTEXT	TABLE	    MacDAC MD-11	 13	(plus 2 due this year and up to 19 from AA)
+XX ( 0) PTEXT	TABLE	    Boeing 747		  7	(to be put up for sale soon)
+XX ( 0) PTEXT	TABLE				---
+XX ( 0) PTEXT	TABLE				475
+XX ( 0) PTEXT	SIG	Mihir
+XX ( 3) ADDRESS	SIG	----------------------------------------------------------------
+XX ( 3) ADDRESS	SIG	Mihir Shah			Email:  mps1@cec.wustl.edu
+XX ( 3) ADDRESS	SIG	Washington University           Phone:  (314) 935-2800
+XX ( 3) ADDRESS	SIG	Campus Box 3874			WWW home page: 
+XX ( 3) ADDRESS	SIG	6515 Wydown Blvd.		http://cec.wustl.edu/~mps1
+XX ( 3) ADDRESS	SIG	St. Louis, MO 63105		* ANY AND ALL COMMENTS WELCOME *
+XX ( 3) ADDRESS	SIG	----------------------------------------------------------------
+XX ( 5) TABLE	PTEXT	How many major airlines are in Chapter 11 at the moment?  Zero.
+XX ( 6) ITEM	SIG		- David
+XX ( 5) TABLE	PTEXT	Good question.  Here's my guess:  
+XX ( 5) TABLE	ITEM	(1)  Southwest likes short-haul markets
+XX ( 5) TABLE	ITEM	(2)  There are virtually no significant DEN markets under 400 miles
+XX ( 5) TABLE	ITEM	(3)  Continental REALLY REALLY wanted to be like Mike, uh, I mean Southwest
+XX ( 5) TABLE	ITEM	(4)  Continental abaondons their oldest hub on the misguided notion that
+XX ( 5) TABLE	ITEM	     low-cost carriers like WN can't make money between 450-900 miles, so
+XX ( 5) TABLE	ITEM	     neither can they.
+XX ( 5) TABLE	PTEXT	Sorry for the sarcasm.  If it weren't for such eccentric decisions the
+XX ( 5) TABLE	PTEXT	industry would get pretty boring sometimes.  I should thank them.
+XX ( 1) QUOTED	PTEXT	In article <3n22u8$969@kei.com>, saskal@rintintin.Colorado.EDU (SASKAL 
+XX ( 1) QUOTED	PTEXT	RICHARD TRNKOCZY) wrote:
+XX ( 8) GRAPHIC	TABLE	Airline     Whopper Hub      Big Hubs         Minor Hubs     Vestigial Hubs
+XX ( 8) GRAPHIC	TABLE	AA          DFW,             ORD, MIA         BNA            RDU (now JI),
+XX ( 8) GRAPHIC	TABLE	                                                             SJC (now QQ), 
+XX ( 8) GRAPHIC	TABLE	                                                             SJU (cruises)
+XX ( 8) GRAPHIC	TABLE	CO          IAH,             EWR,             CLE, GSO
+XX ( 8) GRAPHIC	TABLE	DL          ATL,             DFW, SLC         CVG, FRA, MCO[*2]  JFK(?) 
+XX ( 8) GRAPHIC	TABLE	HP(Am West)                  PHX,             LAS
+XX ( 8) GRAPHIC	TABLE	NW          MSP, DTW                          NRT (Tokyo) MEM (banks 3x/day)
+XX ( 8) GRAPHIC	TABLE	TW                           STL                             JFK, CDG (Paris)
+XX ( 8) GRAPHIC	TABLE	UA          ORD,             DEN, SFO,        IAD, MIA, LAX(?)
+XX ( 8) GRAPHIC	TABLE	US          PIT,             CLT,             PHL, DCA, LGA, BWI, IND
+XX ( 8) GRAPHIC	TABLE	WN[*3]      DAL,             PHX, MDW,        STL
+XX ( 8) GRAPHIC	TABLE	-------
+XX ( 8) GRAPHIC	TABLE	YX (Midwest Express)                          MKE
+XX ( 8) GRAPHIC	TABLE	7J (ValuJet)                                  ATL,IAD
+XX ( 8) GRAPHIC	TABLE	-------
+XX ( 8) GRAPHIC	TABLE	AC
+XX ( 8) GRAPHIC	TABLE	AF
+XX ( 8) GRAPHIC	TABLE	BA
+XX ( 8) GRAPHIC	TABLE	CP
+XX ( 8) GRAPHIC	TABLE	LH
+XX ( 8) GRAPHIC	TABLE	KL
+XX ( 7) SIG	PTEXT	KMC
+XX ( 7) SIG	PTEXT	[*1] Lots of flights as Official Airline of Walt Disney World
+XX ( 7) SIG	PTEXT	[*2] Southwest has concentrations of thru/connecting service at these locations
+XX ( 4) HEADL	SIG						-Stephan Piel
+XX ( 0) PTEXT	SIG	A. Brooke
+XX ( 1) QUOTED	PTEXT	RNA (in CALite dead and buried) also wrote:
+XX ( 4) HEADL	PTEXT	   Do you really think there's good money to be made YVR/YYZ-LAX-SYD/AKL?
+XX ( 1) QUOTED	PTEXT	RNA (in CALite dead and buried) also wrote:
+XX ( 4) HEADL	PTEXT	   Do you really think there's good money to be made YVR/YYZ-LAX-SYD/AKL?
+XX ( 0) PTEXT	HEADL	Rank of Domestic US Airline Hubs by Total Weekday Seat Capacity 5/95
+XX ( 7) SIG	PTEXT	--------
+XX ( 5) TABLE	PTEXT	*Lost Baggage:  Makes sense to me
+XX ( 0) PTEXT	SIG	Dale
+XX ( 0) PTEXT	SIG	Wisconsin
+XX ( 6) ITEM	PTEXT	1.  Europe.  UA has 21 transatlantic flights to Europe this summer.  Three
+XX ( 6) ITEM	PTEXT	orig in SFO, two to LHR and one to CDG.  Three to same places from LAX.  That
+XX ( 6) ITEM	PTEXT	leaves 15 that originate in ORD, JFK, EWR, and (mainly) IAD.  A few of these
+XX ( 6) ITEM	PTEXT	flights have SFO or LAX "tags" (same flight number but different aircraft).
+XX ( 6) ITEM	PTEXT	2.  Latin America.  There are six daily flights to "deep" Latin America, that
+XX ( 6) ITEM	PTEXT	is, Brazil, Argentina, Chile.  Five operate in 767-300 and one in 747-100. 
+XX ( 6) ITEM	PTEXT	Two leave from JFK and four from MIA.  Of these, three or four have "tags" to
+XX ( 6) ITEM	PTEXT	SFO or LAX, some in the same 767-300s and some in other aircraft.  There are
+XX ( 6) ITEM	PTEXT	also 733 tags from MIA to DCA, EWR, and LGA; 763 to ORD.
+XX ( 0) PTEXT	SIG	Larry.Nebron@PCGFX.Com
+XX ( 5) TABLE	PTEXT	<2 revisions:  WN at LAS was omitted.  Also the hub at SEA is AS, not AA.>
+XX ( 5) TABLE	PTEXT	Next question.  Who is paying for all of these flights?  And who is 
+XX ( 5) TABLE	PTEXT	flying the planes?  UA pilots who are going to be using them, or Boeing emps?
+XX ( 0) PTEXT	SIG	Grant Lynde
+XX ( 0) PTEXT	SIG	Ed S.
+XX ( 0) PTEXT	SIG	Krish Chilukuri
+XX ( 5) TABLE	PTEXT	Yeeesh!  Those Tejas folk get some serious hail!
+XX ( 8) GRAPHIC	SIG	=======================================================================
+XX ( 8) GRAPHIC	SIG	   ___  ___/   ___      - Jeff
+XX ( 8) GRAPHIC	SIG	       /      /    /    drmemory@netcom.com
+XX ( 8) GRAPHIC	SIG	      /      ____
+XX ( 8) GRAPHIC	SIG	     /      /     /     An optimist believes we live in the best of all
+XX ( 8) GRAPHIC	SIG	____/     _______/  possible worlds. A pessimist fears this may be true.
+XX ( 8) GRAPHIC	SIG	                                    `o<'
+XX ( 8) GRAPHIC	SIG	---------------------------------oo0(__)0oo--------------------------------
+XX ( 8) GRAPHIC	SIG	   __    __  __  __  __  _  _    __   U  __  _ __ _
+XX ( 8) GRAPHIC	SIG	  /__\  (  )(  )(  )(  )( \( )  (  )    /__\( (  ) )        This message is
+XX ( 8) GRAPHIC	SIG	 /(__)\  )(__\ () /  )(  )  (    )(__  /(__)\\  / /     brought to you from
+XX ( 8) GRAPHIC	SIG	(__)(__)(____)\__/  (__)(_)\_)  (____)(__)(__)\/\/  Cedar Creek, California
+XX ( 0) PTEXT	QUOTED	RNA = Robert Ashcroft
+XX ( 0) PTEXT	QUOTED	MJJ = Michael Jennings
+XX ( 5) TABLE	PTEXT	As promised, the list of world airport traffic and growth.  From Airport
+XX ( 5) TABLE	PTEXT	Council International.  PAX are in millions, and are arriving, plus departing,
+XX ( 5) TABLE	PTEXT	plus in transit counted once.  Big airports not reporting to the ACI include
+XX ( 5) TABLE	PTEXT	the Chinese airports:  Beijing, 10.3 M, Guangzhou, 9.2 M, Shanghai 7.6 M.

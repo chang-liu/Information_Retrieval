@@ -1,0 +1,148 @@
+#!/usr/local/bin/perl
+
+##########################################################
+##  END-OF-SENTENCE Weka arff data file generator
+##
+##  Chang Liu | chang.liu@jhu.edu
+##  Department of Computer Science
+##  Johns Hopkins University
+##
+##  Use:
+##  section1_weka_generator.prl < sent.data.train | more
+##
+##  Suggestion: run in a wide window
+##########################################################
+
+
+$L="classes";
+
+&initialize_set(*abbrevs,"$L/abbrevs"); 
+&initialize_set(*titles,"$L/titles"); 
+&initialize_set(*unlikely_proper_nouns,"$L/unlikely_proper_nouns"); 
+&initialize_set(*sentence_internal,"$L/sentence_internal"); 
+&initialize_set(*timeterms,"$L/timeterms"); 
+&initialize_set(*thethatthen,"$L/thethatthen"); 
+
+# open(INVALID, ">invalid_rule_weka.txt");
+open(OUTFILE, ">sentence.arff");
+&arff_init();
+
+while (<>) {
+  @words = split(' ',$_);
+  ($class,$id,$L3,$L2,$L1,$C,$R1,$R2,$R3,$Llength,$Rlength,$Nspaces) = @words;
+  @arrfoutput = ($class, $lowercase = 0, $newpara = 0, $comma = 0, $titles = 0, $default = 0, $abbrevs = 0, $mname = 0, $figure = 0, $thethatthen = 0, $sentence_internal = 0, $usam = 0, $neos = 0);#, $pagefig = 0, $incpsent = 0, $usam = 0, $longabb = 0, $quote = 0);
+   
+  if ($R1 =~ /^[a-z]/) { 
+    $arrfoutput[1] = 1;
+  } # lowercase, is lower case
+  if ($R1 eq "<P>")    {
+    $arrfoutput[2] = 1;
+  }  # newpara, is new paragraph
+  if ($R1 =~ /^[,\.;&]/)  {
+    $arrfoutput[3] = 1;
+  } # comma, period
+  if (&classmember($L1,titles)) {  
+    $arrfoutput[4] = 1;    
+  }  # titles, Mr. Mrs.
+  if ($R1 =~ /^[A-Z]/) { 
+    $arrfoutput[5] = 1;
+  } # default
+  if (&classmember($L1,abbrevs) || $L1 =~ /^([A-Z]\.[A-Z])+$/) {
+    $arrfoutput[6] = 1;
+  } # abbrevs
+  if ($L1 =~ /^[A-Z]$/ && $L2 =~ /^[A-Z]/ && $R1 =~ /^[A-Z]/) {
+    $arrfoutput[7] = 1;
+  } # mname, Middle name
+  if ($L2 =~ /^\($/) {
+    $arrfoutput[8] = 1;
+  } # figure, page number
+  if (&classmember($R1,thethatthen)) {
+    $arrfoutput[9] = 1;
+  } # thethatthen, R1 begin with the, that, etc will be new sentece
+  if (&classmember($L1,sentence_internal)) {
+    $arrfoutput[10] = 1;
+  } # sentence_internal, L1 being internal class
+  if ($L1 =~ /[a-zA-Z]([\.][a-zA-Z])+/) {
+    $arrfoutput[11] = 1;
+  } # usam, .S, A.M, etc
+  if ($L1 =~ /^[A-Z]$/) {
+    $arrfoutput[12] = 1;
+  } # neos, Single char before . is NEOS
+    
+  $outstring = join(",", @arrfoutput);
+  print OUTFILE ($outstring, "\n");
+}
+
+close(OUTFILE);
+
+print "Done! Please check sentence.arff for output and result.\n";
+
+##########################################################
+## CLASSMEMBER - tests for membership of $key in a given set
+##
+##  The \L in $set{"\L$key"} is a perl hack to convert a
+##  string into all lower case for lookup in a word array
+##  insensitive to the capitalization of the original key.
+##########################################################
+
+sub classmember{
+   local($key,*set) = @_;
+
+   return $set{"\L$key"};
+}
+
+##########################################################
+## INITIALIZE_SET - loads named associative array with set members   
+##########################################################
+
+sub initialize_set{
+   local(*set,$where) = @_;
+   
+    open (FILE,$where) || die "Can't open file $where: $!\n";
+
+    while (<FILE>) {
+        chop;
+        $set{$_} = 1;
+    }
+    close (FILE);
+}
+
+##########################################################
+## ARFF_INIT - Initial the arff file
+## 
+##  Initial the arff output file's header information
+##
+##########################################################
+
+# \@ATTRIBUTE pagefig {0, 1}
+# \@ATTRIBUTE incpsent {0, 1}
+# \@ATTRIBUTE usam {0, 1}
+# \@ATTRIBUTE longabb {0, 1}
+# \@ATTRIBUTE quote {0, 1}
+sub arff_init{
+   print OUTFILE ("% 1. Title: IR HW1 section1 EOS
+% 
+% 2. Sources:
+%      (a) Creator: Chang Liu
+%      (b) Email: chang.liu@jhu.edu
+%      (c) Date: 02/25/2013
+% 
+\@RELATION irEOS
+
+\@ATTRIBUTE class {EOS, NEOS}
+\@ATTRIBUTE lowercase {0, 1}
+\@ATTRIBUTE newpara {0, 1}
+\@ATTRIBUTE comma {0, 1}
+\@ATTRIBUTE titles {0, 1}
+\@ATTRIBUTE default {0, 1}
+\@ATTRIBUTE abbrevs {0, 1}
+\@ATTRIBUTE mname {0, 1}
+\@ATTRIBUTE figure {0, 1}
+\@ATTRIBUTE thethatthen {0, 1}
+\@ATTRIBUTE sentence_internal {0, 1}
+\@ATTRIBUTE usam {0, 1}
+\@ATTRIBUTE neos {0, 1}
+
+\@DATA
+");
+}

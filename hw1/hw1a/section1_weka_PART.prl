@@ -1,0 +1,161 @@
+#!/usr/local/bin/perl
+
+##########################################################
+##  END-OF-SENTENCE CLASSIFIER
+##  Chang Liu, chang.liu@jhu.edu
+##
+##  Use:
+##  section1.prl < sent.data.train | more
+##
+##  Score on training data: 0.996488888888889
+##  Suggestion: run in a wide window
+##########################################################
+
+
+$L="classes";
+
+&initialize_set(*abbrevs,"$L/abbrevs"); 
+&initialize_set(*titles,"$L/titles"); 
+&initialize_set(*unlikely_proper_nouns,"$L/unlikely_proper_nouns"); 
+&initialize_set(*timeterms,"$L/timeterms"); 
+&initialize_set(*thethatthen,"$L/thethatthen"); 
+
+open(OUTFILE, ">invalid_rule_weka_PART.txt");
+open(RESULT, ">section1_weka_PART_result.txt");
+
+
+while (<>) {
+   @words = split(' ',$_);
+   ($class,$id,$L3,$L2,$L1,$C,$R1,$R2,$R3,$Llength,$Rlength,$Nspaces) = @words;
+ 
+  # rule 1 from weka
+  # L1 not in the abbrevs class AND L1 is not a single CAP char AND L1 is not part of a abbrevasion like U.S. 
+  # AND R1 is not start with lowercase AND L1 is not in the sentence_internal class:
+  # abbrevs = 0 AND
+  # neos = 0 AND
+  # usam = 0 AND
+  # lowercase = 0 AND
+  # sentence_internal = 0: EOS 
+  if (!(&classmember($L1,abbrevs) || $L1 =~ /^([A-Z]\.[A-Z])+$/) && !($L1 =~ /^[A-Z]$/) 
+      && !($L1 =~ /[a-zA-Z]([\.][a-zA-Z])+/) && !($R1 =~ /^[a-z]/) && !(&classmember($L1,sentence_internal))) { 
+    &ret(1,$class,$id,'EOS');
+  } 
+  # rule 2 from weka
+  # R1 is not a new paragraph AND R1 is not in the thethatthen class AND L1 is in the title classes:
+  # newpara = 0 AND
+  # thethatthen = 0 AND
+  # titles = 1: NEOS
+  elsif (!($R1 eq "<P>") && !(&classmember($R1,thethatthen)) && (&classmember($L1,titles))) { 
+    &ret(2,$class,$id,'NEOS');
+  }
+  # rule 3 from weka
+  # R1 is a new paragraph AND L1 is not part of a abbrevasion like U.S. :
+  # newpara = 1 AND
+  # usam = 0: EOS
+  elsif (($R1 eq "<P>") && !($L1 =~ /[a-zA-Z]([\.][a-zA-Z])+/)) { 
+    &ret(3,$class,$id,'EOS');
+  }
+  # rule 4 from weka
+  # R1 is not in the thethatthen class AND R1 is not started with CAP (default case):
+  # thethatthen = 0 AND
+  # default = 0: NEOS 
+  elsif (!(&classmember($R1,thethatthen)) && !($R1 =~ /^[A-Z]/)) { 
+    &ret(4,$class,$id,'NEOS');
+  }
+  # rule 5 from weka
+  # L1 is not in the abbrevs class AND R1 is not in the thethatthan class:
+  # abbrevs = 0 AND
+  # thethatthen = 0: NEOS
+  elsif (!(&classmember($L1,abbrevs) || $L1 =~ /^([A-Z]\.[A-Z])+$/) && !(&classmember($R1,thethatthen))) { 
+    &ret(5,$class,$id,'NEOS');
+  } 
+  # rule 6 from weka
+  # L1 is not part of a abbrevasion like U.S. AND L2 is not a page or figure number like (Page . 195)L
+  # usam = 0 AND
+  # figure = 0: EOS
+  elsif (!($L1 =~ /[a-zA-Z]([\.][a-zA-Z])+/) && !($L2 =~ /^\($/)) { 
+    &ret(6,$class,$id,'EOS');
+  } 
+  else                     { 
+    &ret(0,$class,$id,'NEOS');  # Default rule 0 from weka 
+  }
+}
+
+
+# print "Your score is: ", $correct/($correct+$incorrect), "\n";
+print RESULT ("\n\n\nYour score is: ", $correct/($correct+$incorrect), "\n\n");
+
+for ($i=0;$i<7;$i++) {
+  my $totalu = $rule_utilization{"rule_$i" . "_correct"} + $rule_utilization{"rule_$i" . "_incorrect"};
+  print RESULT ("Rule $i" . " total utilization: ", $totalu . " = " . ($totalu * 100 / ($correct + $incorrect)) . "%      ");
+  print RESULT ("Correct: " . ($rule_utilization{"rule_$i" . "_correct"} + 0) . " = " . ($rule_utilization{"rule_$i" . "_correct"} * 100 / $totalu) . "%      ");
+  print RESULT ("Incorrect: " . ($rule_utilization{"rule_$i" . "_incorrect"} + 0) . " = " . ($rule_utilization{"rule_$i" . "_incorrect"} * 100 / $totalu) . "%\n");
+}
+
+print RESULT ("\n");
+print RESULT ("### HW1A cliu70 - OVERALL CORRECT: " . $correct . " = " . $correct*100/($correct+$incorrect) . "%  INCORRECT: " . $incorrect . " = " . $incorrect*100/($correct+$incorrect) . "%.");
+
+close(OUTFILE);
+close(RESULT); 
+ 
+print "Done! Please check section1_weka_PART_result.txt for output and result.\n";
+ 
+ 
+##########################################################
+## RET - prints full line for errors and keeps score
+##     - $where indicates the rule number responsible for the classification
+##
+##  This is a useful debugging tool, as after each change in
+##  the program one can identify the remaining misclassified
+##  training examples and the patterns responsible for them. 
+##########################################################
+ 
+sub ret {
+   local($where,$trueclass,$id,$givenclass) = @_;
+   my @output = (0) x 21;
+   
+   if ($trueclass eq $givenclass) {
+      # print ".. (at ",$where,") -  ", $_;
+      print RESULT (".. (at ",$where,") -  ", $_);
+      $correct++; 
+      $rule_utilization{"rule_$where" . "_correct"}++;
+   }
+   else {
+      # print "XX (at ",$where,") -  ", $_;
+      print RESULT ("XX (at ",$where,") -  ", $_);
+      print OUTFILE ("XX (at ",$where," shoud be ", $trueclass , ") -  ", $_);
+      $incorrect++;
+      $rule_utilization{"rule_$where" . "_incorrect"}++;
+   }
+   next;
+}
+
+##########################################################
+## CLASSMEMBER - tests for membership of $key in a given set
+##
+##  The \L in $set{"\L$key"} is a perl hack to convert a
+##  string into all lower case for lookup in a word array
+##  insensitive to the capitalization of the original key.
+##########################################################
+
+sub classmember{
+   local($key,*set) = @_;
+
+   return $set{"\L$key"};
+}
+
+##########################################################
+## INITIALIZE_SET - loads named associative array with set members   
+##########################################################
+
+sub initialize_set{
+   local(*set,$where) = @_;
+   
+    open (FILE,$where) || die "Can't open file $where: $!\n";
+
+    while (<FILE>) {
+        chop;
+        $set{$_} = 1;
+    }
+    close (FILE);
+}

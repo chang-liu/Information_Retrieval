@@ -1,0 +1,17 @@
+# Information Retrival HW1
+# Chang Liu cliu70
+# chang.liu@jhu.edu
+
+
+SECTION B
+"""    
+1.  Use command 'section1.prl < sent.data.train | more' and/or 'section1_weka_PART.prl < sent.data.train | more' to run the scripts.
+
+2.  [section2.prl]: after running it, it will generate 2 files: [section2_prl_result.txt] has all the output and performance of the script. [invalid_rules.txt] has all the unmatched sentences.
+
+3.  [segment.data.train] is the training data file
+
+4.  \results folder has the final results of my script's performance on the training data.
+
+"""
+

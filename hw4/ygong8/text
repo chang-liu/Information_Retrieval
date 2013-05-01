@@ -1,0 +1,9 @@
+$content = <STDIN>;
+chomp $content;
+
+while($content =~ s/([a-zA-Z0-9_\-\.]+@[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)+)//){
+        print "$1\n";
+    }
+
+
+    (cthornton@jhu.edu) for graduate students and Dr. Selinski (joanne.cs@jhu.edu) for undergrad students. If you are a CS Department affiliate, please contact Steve DeBlasio (steve@cs.jhu.edu) to request items you would like to borrow. An overview of the materials available can be seen at: www.msdnaa.net.

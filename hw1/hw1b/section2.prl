@@ -1,0 +1,392 @@
+#!/usr/local/bin/perl -w
+
+# use strict;
+use List::Util qw/sum/;
+use List::Util qw/max min/;
+
+##########################################################
+##  SEGMENT CLASSIFIER
+##  Chang Liu, chang.liu@jhu.edu
+##
+##  Use:
+##  section2.prl < segment.data.train | more
+##
+##  Score on training data: 0.96469789545146
+##  Suggestion: run in a wide window
+##########################################################
+
+my @test_lines = ( );    # the current line that we are testing
+my @real_lines = ( );    # the correct classification for the current line
+my $numb_lines = 0;      # the number of lines in the block that we testing
+
+my $correct   = 0;       # number of correct classifications
+my $incorrect = 0;       # number of incorrect classifications
+my $line      = undef;
+
+open(OUTFILE, ">invalid_rules.txt");
+open(RESULT, ">section2_prl_result.txt");
+
+
+while (defined ($line = <STDIN>)) {
+    chomp $line;
+
+    if ($line =~ /^#BLANK#/) {
+      &process_segment if $numb_lines;     # if we are at a blank line then
+                                                 # it is time to process the pre-
+                                                 # vious block
+      # print $line, "\n";
+
+      @test_lines  = ( );   # make sure that we clear memory here or else
+      @real_lines  = ( );   #  these arrays may hold old data which will
+      $numb_lines  = 0;     #  screw up calculations of their length
+    }
+    else {
+
+      ($test_lines[ $numb_lines ]) = ($line =~ m/^[^\t]+\t(.*)/);
+      ($real_lines[ $numb_lines ]) = ($line =~ m/^([^\t]+)\t/  );
+
+      $numb_lines += 1;
+    }
+}
+
+# print "Your score is: ", $correct/($correct+$incorrect), "\n";
+print RESULT ("\n\n\nYour score is: ", $correct/($correct+$incorrect), "\n\n");
+
+for ($i=0;$i<9;$i++) {
+  my $totalu = $rule_utilization{"rule_$i" . "_correct"} + $rule_utilization{"rule_$i" . "_incorrect"};
+  print RESULT ("Rule $i" . " total utilization: ", $totalu . " = " . ($totalu * 100 / ($correct + $incorrect)) . "%      ");
+  print RESULT ("Correct: " . ($rule_utilization{"rule_$i" . "_correct"} + 0) . " = " . ($rule_utilization{"rule_$i" . "_correct"} * 100 / $totalu) . "%      ");
+  print RESULT ("Incorrect: " . ($rule_utilization{"rule_$i" . "_incorrect"} + 0) . " = " . ($rule_utilization{"rule_$i" . "_incorrect"} * 100 / $totalu) . "%\n");
+}
+
+print RESULT ("\n");
+print RESULT ("### HW1B cliu70 - OVERALL CORRECT: " . $correct . " = " . $correct*100/($correct+$incorrect) . "%  INCORRECT: " . $incorrect . " = " . $incorrect*100/($correct+$incorrect) . "%.");
+
+print "Done! Please check section2_prl_result.txt for output and result.\n";
+
+close(OUTFILE);
+close(RESULT); 
+
+############################################################
+## Process segments by applying specialized detectors/
+## classifiers to the array of the text lines in the segment 
+############################################################
+
+
+sub process_segment {
+    my $cnt;
+
+    if    ( &quoted_detector ) {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+          &ret( 1, $real_lines[$cnt], "QUOTED", $test_lines[$cnt] );
+      }
+    }
+    elsif    ( &nnhead_detector ) {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+          &ret( 2, $real_lines[$cnt], "NNHEAD", $test_lines[$cnt] );
+      }
+    }
+    elsif    ( &address_detector ) {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+          &ret( 3, $real_lines[$cnt], "ADDRESS", $test_lines[$cnt] );
+      }
+    }
+    elsif    ( &headl_detector ) {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+          &ret( 4, $real_lines[$cnt], "HEADL", $test_lines[$cnt] );
+      }
+    }
+    elsif    ( &table_detector ) {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+          &ret( 5, $real_lines[$cnt], "TABLE", $test_lines[$cnt] );
+      }
+    }
+    elsif    ( &item_detector ) {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+          &ret( 6, $real_lines[$cnt], "ITEM", $test_lines[$cnt] );
+      }
+    }
+    elsif    ( &sig_detector ) {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+          &ret( 7, $real_lines[$cnt], "SIG", $test_lines[$cnt] );
+      }
+    }
+    elsif    ( &graphic_detector ) {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+          &ret( 8, $real_lines[$cnt], "GRAPHIC", $test_lines[$cnt] );
+      }
+    }
+    else {
+      for($cnt = 0; $cnt < scalar @test_lines ; $cnt++) {
+          &ret( 0, $real_lines[$cnt], "PTEXT" , $test_lines[$cnt] );
+      }
+    }
+}
+
+
+############################################################
+## Quotation Detector
+############################################################
+
+    
+sub quoted_detector {
+
+    my $score  = 0;
+    my $weight = 0.75;   # weight is a variable so that it is easy to find
+    my $cnt;             #  and change.
+
+    my $quote1 = ">";
+    my $quote2 = ":";
+    my $quote3 = "\\|>"; 
+
+    my $block_quote1 = "$quote1|$quote2|$quote3";
+    my $block_quote2 = "$quote1|$quote2";
+
+    my $write_quote1 = ".+wrote:";
+    my $write_quote2 = ".+writes:";
+    my $write_quote3 = ".+write:";
+    
+    ## If a segment start with >:|> OR In article < OR text> OR @
+    ## Then it is a QUOTED segment
+    for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+      if ( $test_lines[$cnt] =~ /^($block_quote1)(\s*($block_quote2))*/ || $test_lines[$cnt] =~ /$write_quote1/
+          || $test_lines[$cnt] =~ /$write_quote2/ || $test_lines[$cnt] =~ /$write_quote3/ || $test_lines[$cnt] =~ /^In article </
+          || $test_lines[$cnt] =~ /^[ A-Za-z]*>/ || $test_lines[$cnt] =~ /^[@]/) {
+        $score++;
+      }
+    }
+
+    return (($score / (scalar @test_lines)) > $weight);
+}
+
+############################################################
+## This is the NNHEAD detector
+############################################################
+
+sub nnhead_detector {
+
+    my $score  = 0;
+    my $weight = 0.65;   
+    my $cnt;   
+    
+    # If a segment start with non-whitespace and followed by a : and whitespace
+    # then it is a NNHEAD segment
+    for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+      if ( $test_lines[$cnt] =~ /^[^\s]*:\s/) {
+        $score++;
+      }
+    }
+
+    return (($score / (scalar @test_lines)) > $weight);
+}
+
+############################################################
+## This is the HEADL detector
+############################################################
+
+sub headl_detector {
+
+    my $score  = 0;
+    my $lineweight = 0.50;
+    my $weight = 0.6;   
+    my $whitespace = 0;
+    my $total = 0;
+    my $cnt;   
+    
+    # A HEADL must start with one or more whitespace, and most words in the line should have at least a CAP char
+    # if the word has at least one CAP char, I count it as valid. A valid line should have more than 50% valid words;
+    # Also, more than 60% lines must be the above kind of valid lines
+    for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+      if ($test_lines[$cnt] =~ /^\s+/) {
+        # $score++;
+        my $tmp_count = () = $test_lines[$cnt] =~ m/[A-Z]/g;
+        my $tmp_count2 = () = $test_lines[$cnt] =~ m/\w+[\s]/g;
+        $whitespace = $tmp_count2;
+        $total += length($test_lines[$cnt]);
+
+        my @sections = split(/\s+/, $test_lines[$cnt]);
+        if (($tmp_count / scalar @sections) >= $lineweight) {
+          $score ++;
+        }
+      }
+    }
+      # if ($test_lines[$cnt] =~ /^[A-Z][a-z]*\s[A-Z][a-z*]/) {
+        # $score++;
+      # }
+    # print $whitespace, " ", $total, "\n";
+    return (($score / (scalar @test_lines)) > $weight && ($whitespace / $total) < $lineweight);
+}
+
+
+############################################################
+## This is the GRAPHIC detector
+############################################################
+
+sub graphic_detector {
+
+    my $total  = 0;
+    my $weight = 0.5;   
+    my $cnt;   
+    my $space_count = 0;
+    
+    ## We count the number of whitespaces here, a graphic should have more than 50% chars to be whitespace
+    for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+      my $tmp_count = () = $test_lines[$cnt] =~ m/[\w]/g;
+      $space_count += $tmp_count;
+      $total += length($test_lines[$cnt]);
+    }
+
+    return (($space_count / $total) < $weight);
+}
+
+############################################################
+## This is the ITEM detector
+############################################################
+
+sub item_detector {
+    my $cnt;
+    my $weight = 0.10;
+    my $score  = 0;
+    my $return = 0;
+    
+    ## If a segment start with first char is ( and a number OR a number followed by a .
+    ## then it is like to be ITEM
+    if ($test_lines[0] =~ /^\s*\([0-9]+/ || $test_lines[0] =~ /^\s*[0-9]+\./) {
+      $return = 1;
+      # print $test_lines[0];
+    }
+    ## If a line start with first char to be -, and is start with at least 10% of the
+    ## lines in the segment, then it is likely to be a ITEM
+    else {
+      for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+        if ( $test_lines[$cnt] =~ /^\s*-\s/) {
+          $score++;
+        }
+      }
+    }
+    
+    if (($score / (scalar @test_lines)) > $weight) {
+      $return = 1;
+    }
+    return ($return);
+}
+
+############################################################
+## This is the SIG detector
+############################################################
+
+sub sig_detector {
+
+    my $score  = 0;
+    # my $weight = 0.65;   
+    my $cnt;   
+    
+    ## SIG usually has only name abbreves like M.J. OR starts with -- OR - followed by name OR _ followed by name
+    if ($test_lines[0] =~ /^[A-Z\.]+$/ || $test_lines[0] =~ /^--\s*/ || $test_lines[0] =~ /^-+\s*[A-Za-z]+/ || $test_lines[0] =~ /^_+[A-Za-z]+/) {
+      $score++;
+    }
+
+    return ($score > 0);
+}
+
+############################################################
+## This is the ADDRESS detector
+############################################################
+
+sub address_detector {
+
+    ## We check the States and Zip code section in the address
+    ## A valid US address should have a line like Baltimore, MD 21211-21283
+    ## A valid Canada address should have a line like Toronto, ON M6J 3P3
+    my $score  = 0;
+    # my $weight = 0.90;   
+    my $cnt;   
+    
+    for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+      if ( $test_lines[$cnt] =~ /, [A-Za-z]+ \d\d\d\d\d(-\d\d\d\d)*/ || $test_lines[$cnt] =~ /, [A-Za-z]+ [A-Za-z]\d[A-Za-z] \d[A-Za-z]\d/) {
+        $score++;
+      }
+    }
+
+    return ($score > 0);
+}
+
+############################################################
+## This is the TABLE detector
+############################################################
+
+sub table_detector {
+
+    my $score  = 0;
+    my $weight = 0.90;   
+    my $formatweight = 0.80;
+    my $formatscore = 0;
+    # my @result;
+    my $cnt;  
+    my $last = 0;
+    
+    # A TABLE should have some whitespaces between each elements
+    # and each line should have the same format.
+    # For each line, we check if it has the same cols as the previous one
+    # if true then we assume it is a table line and add the tableformat score by 1
+    # To be a valid TABLE, most of lines should have some 2 or more consecutive whitespaces
+    # AND most of the lines should have similar number of cols (similar in format)
+    for ($cnt = 0; $cnt < scalar @test_lines; $cnt++) {
+
+      if ($test_lines[$cnt] =~ /(\s\s)+\w+/ || $test_lines[$cnt] =~ /\w+(\s\s)+/ || $test_lines[$cnt] =~ /(\t+\w+)(\t+\w*)+/ || $test_lines[$cnt] =~ /(\w+\t+)(\w+\t*)+/) {
+        $score++;
+      }
+      
+      # For each line, we check if it has the same cols as the previous one
+      # if true then we assume it is a table line and add the tableformat score by 1
+      my @tmp = split(/\s+/, $test_lines[$cnt]);
+      # print $tmp[0], "\n";
+      if ($last == scalar(@tmp)) {
+        $formatscore++;
+      }
+      $last = scalar(@tmp);
+      # print $last;
+      # @tmp = ();
+    }
+
+    return (($score / (scalar @test_lines)) > $weight || ($formatscore / (scalar @test_lines)) > $formatweight );
+      # }
+      
+    # }
+    # my $max = max @result;
+    # my $sum = sum @result;
+    # return ($max / $sum > $weight);
+}
+
+############################################################
+## RET - prints full line for errors and keeps score $rule
+##     - indicates the rule number responsible for the 
+##     - classification
+##
+##  This is a useful debugging tool, as after each change in
+##  the program one can identify the remaining misclassified
+##  training examples and the patterns responsible for them. 
+############################################################
+ 
+sub ret {
+
+    my $where       = shift;   # which rule did I use here
+    my $trueclass  = shift;   # what is the true sentence class ('NEOS','EOS')
+    my $givenclass = shift;   # what is the sentence class my rule gives
+    my $line       = shift;   # the actual line tested
+
+    if ($trueclass eq $givenclass) {
+      # printf (".. (%2d) %s\t%s\t%s\n",$where,$givenclass,$trueclass,$line);
+      printf RESULT (".. (%2d) %s\t%s\t%s\n",$where,$givenclass,$trueclass,$line);
+      $correct++; 
+      $rule_utilization{"rule_$where" . "_correct"}++;
+    }
+    else {
+      # printf("XX (%2d) %s\t%s\t%s\n",$where,$givenclass,$trueclass,$line);
+      printf OUTFILE ("XX (%2d) %s\t%s\t%s\n",$where,$givenclass,$trueclass,$line);
+      printf RESULT ("XX (%2d) %s\t%s\t%s\n",$where,$givenclass,$trueclass,$line);
+      $incorrect++;
+      $rule_utilization{"rule_$where" . "_incorrect"}++;
+    }
+}
+

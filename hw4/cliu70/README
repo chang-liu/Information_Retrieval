@@ -1,0 +1,18 @@
+Yuge Gong  ygong8@jhu.edu
+Chang Liu chang.liu@jhu.edu
+
+README
+
+1.  In part one, we modify both lwp_parser and lwp_parser_two to extracts only links which are not self-referencing or non-local. There are two definitions for non-local. 
+
+In lwp_parser, we treat any link that under the local domain is local link. For example, if our base link is http://cs.jhu.edu/apply/, then we consider http://cs.jhu.edu is our local domain. Then http://cs.jhu.edu/student/ is also a local link.
+
+In lwp_parser_two, we treat any link that not under the base link is non-local. For example, if our base link is http://cs.jhu.edu/apply/, then we consider both http://cs.jhu.edu and http://cs.jhu.edu/student/ are non-local.
+
+2.  In part two, we store all the links to .ps and .pdf files in document.txt file.
+
+  ranking in part two:
+  We give different weight to different links, ex. if a link is to some plain text page like htm, html, etc., or a link is to some directory (like cs.jhu.edu/apply), we generally give them the highest weight. Because in these pages we are most likely to extract and get the contact info we need.
+  If a link is to .pdf or .ps document, then we give it the second highest weight. Because they are the files we are looking for.
+  We are less interested in other pages because they may either be files or script that we couldn't extract information from.
+  Also, we rank shorter links higher, because they are more likely to be within the same directory as our current page which contains the most relevent information to our current page or they are more likely to be the index page in another directories which contains rich information that we can extract.
